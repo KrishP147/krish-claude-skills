@@ -16,7 +16,9 @@ argument-hint: "mode: current | retroactive | both (default: current)"
 gh project list --owner <owner> --format json
 ```
 
-If none exists: `gh project create --owner <owner> --title "<repo> Board"`. Projects v2 ships a default Status field with Todo/In Progress/Done — confirm via `gh project field-list` rather than assuming; only add custom columns if the user asks for something different.
+`gh project list` returns *every* project the owner has, across all their repos — an owner with an unrelated existing board (e.g. a different project entirely) is not evidence this repo has one. Filter the result to a title match for **this** repo (`"<repo> Board"`) before deciding a board already exists; don't treat any non-empty list as "done."
+
+If no title match exists: `gh project create --owner <owner> --title "<repo> Board"`. Projects v2 ships a default Status field with Todo/In Progress/Done — confirm via `gh project field-list` rather than assuming; only add custom columns if the user asks for something different.
 
 ## 3. Scan the repo for documented work
 

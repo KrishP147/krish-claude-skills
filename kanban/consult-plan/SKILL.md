@@ -16,3 +16,5 @@ argument-hint: "the idea, deviation, or innovation to discuss"
    - Otherwise, a comment on the relevant issue, or a new issue if there isn't one yet.
 
    Don't invent a decisions-doc convention the repo doesn't already have.
+
+   If a new issue was created, add it to the kanban board's Todo column too (`gh project item-add` or `status:todo` label, matching whatever the repo already uses) — same as `divide` does for its sub-issues. An issue born from a plan discussion still belongs on the board; don't leave it to be picked up by a future backfill.

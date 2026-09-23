@@ -9,7 +9,7 @@ description: Show the next work-session task(s) from a repo's GitHub kanban boar
 gh project list --owner <owner> --format json
 ```
 
-If there's exactly one project, use it. If there are several, ask which one. If there are none, check for a label-based pseudo-board instead (`status:todo`, `status:in-progress`, `status:done` labels on issues). If neither exists, tell the user to run the `kanban-setup` skill first — there's nothing to pull "next" from yet.
+`gh project list` returns *every* project the owner has, not just ones tied to this repo — an owner with other, unrelated boards is common, so don't treat "several returned" as automatic ambiguity. First filter to a title match for this repo (`"<repo> Board"`, matching `kanban-setup`'s naming) or to boards whose items link back to this repo. If exactly one matches, use it without asking. Only ask the user when more than one still matches after that filter. If none match, check for a label-based pseudo-board instead (`status:todo`, `status:in-progress`, `status:done` labels on issues). If neither exists, tell the user to run the `kanban-setup` skill first — there's nothing to pull "next" from yet.
 
 ## 2. Check for a burning priority first
 
@@ -21,7 +21,7 @@ A red default branch outranks everything else — surface it as priority #1 if f
 
 ## 3. Pull candidate tasks
 
-- Projects v2: `gh project item-list <number> --owner <owner> --format json`, filter to the "Todo"/"Ready" status.
+- Projects v2: `gh project item-list <number> --owner <owner> --format json`, filter to the "Todo"/"Ready" status. **Verified unreliable in testing**: on a freshly created project this returned `{"items":[],"totalCount":0}` for 2+ minutes even though items were genuinely on the board (confirmed via `gh issue view` showing the project/status, and via GraphQL node lookup). If it comes back empty, don't conclude the board is empty — cross-check with `gh issue list --repo <owner>/<repo> --state open --json number,title,projectItems` first (reads project status per-issue and was reliable in testing even when `item-list` wasn't), and only fall through to "run kanban-setup" if that's *also* empty.
 - Label fallback: `gh issue list --label "status:todo" --state open --json number,title,labels`.
 
 Sort by a priority label if one exists (`priority:high` etc.), else by issue age (oldest first).
