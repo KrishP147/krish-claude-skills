@@ -1,6 +1,8 @@
-# Krish's Claude Skills
+# skills
 
-My personal collection of [Claude Code](https://claude.com/claude-code) skills, subagents and dev config, shared here so you (or I, on another machine) can install and use them too.
+Krish's Claude Code skills, subagents and dev config.
+
+A personal collection of [Claude Code](https://claude.com/claude-code) skills, subagents and dev config, shared here so you (or I, on another machine) can install and use them too.
 
 A **skill** is a directory with a `SKILL.md` that Claude Code loads into the current conversation when it decides the skill applies (or when you type `/<name>`). A **subagent** is a `.md` file that defines a separate worker with its own context window, model, tool allowlist and preloaded skills; Claude spawns it for isolated work. Skills are "how to do X"; agents are "who does X, with what permissions".
 
@@ -44,8 +46,8 @@ They also work on their own: "use the planner agent to brief the next issue" is 
 ## Install
 
 ```bash
-git clone https://github.com/KrishP147/krish-claude-skills.git
-cd krish-claude-skills
+git clone https://github.com/KrishP147/skills.git
+cd skills
 ./scripts/install-skills.sh        # bash/git-bash/mac/linux
 # or
 .\scripts\install-skills.ps1       # Windows PowerShell
@@ -56,7 +58,7 @@ This lints the repo, then copies every skill into `~/.claude/skills/<name>/` and
 ## Update
 
 ```bash
-cd krish-claude-skills
+cd skills
 git pull
 ./scripts/install-skills.sh        # or .\scripts\install-skills.ps1
 ```

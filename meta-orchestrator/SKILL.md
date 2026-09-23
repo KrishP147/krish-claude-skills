@@ -33,6 +33,10 @@ must be the top-level session.**
 | Implement | `implementer` | sonnet | kickoff brief verbatim + branch prefix + protected branch | handoff doc absolute path, last line |
 | Verify | `verifier` | opus | handoff path + interview authorization yes/no | verified-by, fixes / issues filed, decided-for-you, manual steps, `next` |
 
+**You (orchestrate):** the strongest model available is recommended — Fable-class
+if you have it — because you hold every merge and scope decision. Not required:
+an Opus-class orchestrator works; just re-check the merge gate more carefully.
+
 Planner says ambiguous / algorithm-heavy → spawn implementer with `model: opus`.
 **Go with the strong model's recommendations by default**; log any override.
 
