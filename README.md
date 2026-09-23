@@ -12,6 +12,8 @@ A "skill" is a directory with a `SKILL.md` file that Claude Code picks up automa
 | [`grilling`](grilling/) *(Matt Pocock)* | Interviews you relentlessly, one round of questions at a time with a recommendation attached to each, until a plan or decision is fully stress-tested. | none |
 | [`grill-me`](grill-me/) *(Matt Pocock)* | Short alias for `grilling`. | none |
 | [`handoff`](handoff/) *(Matt Pocock)* | Compacts the current conversation into a handoff document so a fresh session can pick up where it left off. | none |
+| [`meta-orchestrator`](meta-orchestrator/) | Runs a repo's backlog unattended as the orchestrator above other agents: a strong model plans and glues, a fast model implements, every step in a fresh subagent, tests + CI gate every merge, and an append-only ledger records everything. | `gh`; a repo with a contributing guide / kanban-style skills works best |
+| [`progress-report`](progress-report/) | Turns the orchestrator's ledger into a short .docx report covering only what happened since the last report (watermarked, never overlapping): done, what worked, what didn't, concerns, decisions made on your behalf, manual steps for you. | a `docx` skill or `python-docx` |
 
 ### [`kanban/`](kanban/) — GitHub-Issues-as-kanban-board workflow
 
@@ -25,6 +27,8 @@ A "skill" is a directory with a `SKILL.md` file that Claude Code picks up automa
 | [`kanban-setup`](kanban/kanban-setup/) | Bootstraps a GitHub Projects board for a repo; can backfill issues from what's already documented (current work, completed work, or both) |
 
 Needs `gh auth refresh -s project -s read:project` once (see [`kanban/README.md`](kanban/README.md)).
+
+`meta-orchestrator` and `progress-report` are a pair: the orchestrator writes `ledger.md` into a reports folder as it works; the report skill reads it and advances a `.last-reported` watermark so report #2 starts exactly where report #1 stopped.
 
 `grilling`, `grill-me`, and `handoff` are by [Matt Pocock](https://github.com/mattpocock/skills) (MIT-licensed — see [`THIRD_PARTY_LICENSES.md`](THIRD_PARTY_LICENSES.md)), included here verbatim. `npx skills add mattpocock/skills` pulls his full set directly if you want more than these three. Everything else in this repo is original.
 
