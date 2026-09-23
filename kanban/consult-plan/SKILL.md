@@ -6,7 +6,7 @@ argument-hint: "the idea, deviation, or innovation to discuss"
 
 1. **Gather the baseline** — don't require any of these, just use whatever exists:
    - `gh issue list --state open` for the current open work.
-   - The kanban board's current state (`gh project item-list` or the `status:*` labels).
+   - The kanban board's current state (`gh project item-list` or the `status:*` labels), if the repo has a board.
    - Any roadmap-like doc if present (`ROADMAP.md`, `docs/roadmap.md`, or similar) — read it if it exists, skip if it doesn't.
 
 2. **Grill.** Call the Skill tool with `"grilling"`, giving it the baseline above as context and framing the interview around: does this idea fit the existing plan, conflict with it, or extend it — and what does the user actually want to happen.

@@ -12,7 +12,7 @@ argument-hint: "path to handoff doc (auto-finds newest matching file in the OS t
 
 4. **Update docs, if the repo has them.** A roadmap doc gets its checkboxes ticked; a status doc gets its component rows and dated "what changed" entry; a decisions doc gets a row only if the handoff records a decision. Otherwise: Check for a README "Status"/"Progress" section, a `CHANGELOG.md`, or a `docs/` folder — update whatever actually exists. Don't invent doc structure the repo doesn't have.
 
-5. **Update the board.** Comment on the relevant issue(s) with a summary. If complete and verified, close the issue and move its card to Done. If incomplete, leave it open and set the card/label to reflect where it actually stands.
+5. **Update the board, if there is one.** Locate it the way `next` §1 does; a repo whose queue is a roadmap doc has no card to move — skip the card step, keep the issue comment/close. Comment on the relevant issue(s) with a summary. If complete and verified, close the issue and move its card to Done. If incomplete, leave it open and set the card/label to reflect where it actually stands.
 
 6. **Escalate deviations.** If the handoff's `## Board status` section lists deviations or innovations, automatically call the Skill tool with `"consult-plan"` to reconcile them before finishing.
 
