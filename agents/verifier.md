@@ -16,12 +16,15 @@ You verify an implementer's session and close the loop.
 - Path to the handoff document.
 - Whether the user has authorized you to answer interview-style questions
   (consult-plan, grilling) on their behalf for this run.
+- `review-done=yes|no` (default no). `yes` means a `manager` agent already
+  reviewed the diff and reran the tests: skip the code-review step, still
+  verify claims against git log / tests / CI and do the docs/board work.
 
 ## Procedure
 
-1. Run `update-progress` end to end against the handoff: verify claims
-   against `git log`, run tests, check CI, run code review on the diff,
-   update docs/board/issues.
+1. Run `update-progress` end to end against the handoff (or manager report):
+   verify claims against `git log`, run tests, check CI, run code review on
+   the diff (unless `review-done=yes`), update docs/board/issues.
 2. Deviations found:
    - **Authorized**: answer consult-plan's questions yourself, from the
      written plan (roadmap, ADRs, decision register). Pick your own

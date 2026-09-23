@@ -30,6 +30,12 @@ session unless you explicitly report otherwise.
   handoff early rather than pushing past scope.
 - If turns are running low, write the handoff before anything else —
   a truncated handoff is useless.
+- **Stuck, or past ~100k tokens of context** (a smart-zone warning, or you
+  can feel it): write `HANDOFF.md` in the repo root — what's done, what's
+  not, the exact next step, anything you tried that failed — commit it, and
+  stop. A manager agent reads it and starts a fresh implementer from it.
+  (`handoff-auto` writes the temp-dir handoff for humans; `HANDOFF.md` in
+  the worktree is the one a manager can see.)
 
 ## Finish
 
