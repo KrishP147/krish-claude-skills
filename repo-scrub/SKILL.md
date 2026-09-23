@@ -2,7 +2,10 @@
 name: repo-scrub
 description: Scan a GitHub repo's full git history for secrets and large files, let the user pick what to scrub, safely rewrite history, and flip the repo from private to public. Use when making a repo public, open-sourcing a repo, or cleaning git history before publishing.
 argument-hint: "[owner/repo] (defaults to current repo)"
+disable-model-invocation: true
 ---
+
+User-invoked only (`/repo-scrub`) because it rewrites history and force-pushes.
 
 Making a GitHub repo public is effectively one-way — once it's public, forks/caches/scrapers can have already copied the history within minutes. GitHub gives no hook to intercept its own visibility toggle, so never rely on it: do all cleanup *before* the repo goes public, then flip visibility yourself via `gh`.
 
@@ -17,9 +20,9 @@ Confirm with the user which repo this is for if not obvious from context or the 
 Run each version check; if missing, tell the user the install command and stop until it's installed (don't try to silently work around a missing tool):
 
 - `gh auth status` — should already be authenticated. If not, tell the user to run `gh auth login`.
-- `gitleaks version` — if missing: `winget install --id Gitleaks.Gitleaks -e`
-- `git filter-repo --version` — if missing: `pip install git-filter-repo`. **Verify with the version command itself, not pip's exit code** — a `--user` install can land in a Scripts folder that isn't on PATH, in which case the pip install "succeeds" but `git filter-repo` still isn't runnable.
-- `git-sizer --version` — if missing: `winget install --id GitHub.git-sizer -e`
+- `gitleaks version` — if missing: Windows `winget install --id Gitleaks.Gitleaks -e`; mac/linux `brew install gitleaks` (or GitHub releases).
+- `git filter-repo --version` — if missing: Windows/mac/linux `pip install git-filter-repo`; mac also `brew install git-filter-repo`. **Verify with the version command itself, not pip's exit code** — a `--user` install can land in a Scripts folder that isn't on PATH, in which case the pip install "succeeds" but `git filter-repo` still isn't runnable.
+- `git-sizer --version` — if missing: Windows `winget install --id GitHub.git-sizer -e`; mac/linux `brew install git-sizer` (or GitHub releases).
 
 ## 2. Confirm target repo
 

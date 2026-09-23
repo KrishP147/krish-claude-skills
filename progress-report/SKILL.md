@@ -1,7 +1,7 @@
 ---
 name: progress-report
-description: Produce a readable, non-verbose .docx progress report of what an orchestrated or long-running session has done since the LAST report — never overlapping a previous one — with what worked, what didn't, concerns, decisions made on the user's behalf, and manual steps for the user. Use when the user asks for "an update doc", "what's been done", "make a report", or "write up progress".
-argument-hint: "reports folder [+ 'full' to ignore the watermark and report everything]"
+description: Produce a readable, non-verbose progress report (Markdown by default, .docx on request) of what an orchestrated or long-running session has done since the LAST report — never overlapping a previous one — with what worked, what didn't, concerns, decisions made on the user's behalf, and manual steps for the user. Use when the user asks for "an update doc", "what's been done", "make a report", or "write up progress".
+argument-hint: "reports folder [+ 'docx' for a Word file instead of Markdown] [+ 'full' to ignore the watermark]"
 ---
 
 Turn the run's ledger into a document the user can read in two minutes.
@@ -53,18 +53,24 @@ Style: bullets over prose, one idea per bullet, no filler, no restating the
 issue bodies. Numbers go in the Done table, not in sentences. Aim for one to
 two pages.
 
-## 3. Build the .docx
+## 3. Build the document
 
-Use the `docx` skill if available (docx-js path). Otherwise `python-docx`.
-Either way:
+**Default: Markdown.** Write a plain `.md` file with real headings (`##` per
+section), bullet lists, and a Markdown table for **Done** (Issue · Title ·
+PR · Tests · CI). Use full GitHub URLs for every issue/PR/commit reference
+(Markdown links, not bare `#n`). Filename: `NNN-YYYY-MM-DD-<short-slug>.md`
+(zero-padded report number), saved in the reports folder. Never overwrite an
+earlier report.
 
-- Heading styles for sections, real bullet lists (not "-" text), a small
-  table for **Done** (Issue · Title · PR · Tests · CI).
-- Hyperlinks for every issue/PR/commit reference.
-- Filename: `NNN-YYYY-MM-DD-<short-slug>.docx` (zero-padded report number),
-  saved in the reports folder. Never overwrite an earlier report.
-- Open the file once after writing (convert to text or read back) to check
-  nothing is empty or malformed.
+**If the user passed `docx`:** build the .docx exactly as before — use the
+`docx` skill if available (docx-js path), otherwise `python-docx`. Heading
+styles for sections, real bullet lists (not "-" text), a small table for
+**Done**, hyperlinks for every issue/PR/commit reference. Filename:
+`NNN-YYYY-MM-DD-<short-slug>.docx`, saved in the reports folder. Never
+overwrite an earlier report.
+
+Either way: open the file once after writing (convert to text or read back)
+to check nothing is empty or malformed.
 
 ## 4. Advance the watermark
 

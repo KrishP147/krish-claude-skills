@@ -16,4 +16,6 @@ argument-hint: "issue number or description of the task to divide"
 
 4. Add each new issue to the kanban board's Todo column (`gh project item-add`) or `status:todo` label, matching whatever the repo already uses.
 
-5. If the parent issue is now purely a tracker (no remaining standalone work), say so and offer to relabel/close it once all children land.
+5. If a roadmap doc links the parent (`ROADMAP.md`, `docs/roadmap.md`), add the children inline next to it (`#n → #a, #b`) and commit that as `docs: divide #n into #a/#b`.
+
+6. If the parent issue is now purely a tracker (no remaining standalone work), say so and offer to relabel/close it once all children land.

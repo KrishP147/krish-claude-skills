@@ -1,8 +1,8 @@
 # Third-party licenses
 
-## grilling, grill-me, handoff
+## grilling, grill-me, handoff, handoff-auto
 
-Source: [mattpocock/skills](https://github.com/mattpocock/skills), copied verbatim. Confirmed MIT-licensed (checked 2026-09-23 via the GitHub API against that repo's own `LICENSE` file). MIT permits reuse/redistribution as long as the copyright and permission notice travels with the copy — reproduced below in full, unmodified.
+Source: [mattpocock/skills](https://github.com/mattpocock/skills), copied verbatim (`handoff-auto` is derived from `handoff` — body unchanged, only frontmatter differs — same MIT notice applies). Confirmed MIT-licensed (checked 2026-09-23 via the GitHub API against that repo's own `LICENSE` file). MIT permits reuse/redistribution as long as the copyright and permission notice travels with the copy — reproduced below in full, unmodified.
 
 ```
 MIT License

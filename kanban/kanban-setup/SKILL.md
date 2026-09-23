@@ -2,7 +2,10 @@
 name: kanban-setup
 description: Set up a GitHub Projects kanban board for a repo and populate it with issues from documented work — current planned work, already-completed work (retroactive backfill), or both. Use when a repo has no GitHub kanban board yet, or its issue history needs backfilling from docs/git history.
 argument-hint: "mode: current | retroactive | both (default: current)"
+disable-model-invocation: true
 ---
+
+User-invoked only (`/kanban-setup`) because it creates real GitHub issues.
 
 **This creates real, visible GitHub issues.** Always show the user the full preview list of issues about to be created and wait for confirmation before creating anything — don't create blind, and don't skip items silently.
 
@@ -16,7 +19,7 @@ argument-hint: "mode: current | retroactive | both (default: current)"
 gh project list --owner <owner> --format json
 ```
 
-`gh project list` returns *every* project the owner has, across all their repos — an owner with an unrelated existing board (e.g. a different project entirely) is not evidence this repo has one. Filter the result to a title match for **this** repo (`"<repo> Board"`) before deciding a board already exists; don't treat any non-empty list as "done."
+Locate the board the way `next` §1 does (title match `<repo> Board`, then label fallback). An unrelated existing board on the owner's account is not evidence this repo has one — don't treat any non-empty list as "done."
 
 If no title match exists: `gh project create --owner <owner> --title "<repo> Board"`. Projects v2 ships a default Status field with Todo/In Progress/Done — confirm via `gh project field-list` rather than assuming; only add custom columns if the user asks for something different.
 

@@ -10,7 +10,7 @@ argument-hint: "path to handoff doc (auto-finds newest matching file in the OS t
 
 3. **Code review, if code changed.** If product code (not just docs) changed, call the Skill tool with `"code-review"` over the session's commits before treating anything as done.
 
-4. **Update docs, if the repo has them.** Check for a README "Status"/"Progress" section, a `CHANGELOG.md`, or a `docs/` folder — update whatever actually exists. Don't invent doc structure the repo doesn't have.
+4. **Update docs, if the repo has them.** A roadmap doc gets its checkboxes ticked; a status doc gets its component rows and dated "what changed" entry; a decisions doc gets a row only if the handoff records a decision. Otherwise: Check for a README "Status"/"Progress" section, a `CHANGELOG.md`, or a `docs/` folder — update whatever actually exists. Don't invent doc structure the repo doesn't have.
 
 5. **Update the board.** Comment on the relevant issue(s) with a summary. If complete and verified, close the issue and move its card to Done. If incomplete, leave it open and set the card/label to reflect where it actually stands.
 
