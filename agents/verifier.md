@@ -25,6 +25,12 @@ You verify an implementer's session and close the loop.
 1. Run `update-progress` end to end against the handoff (or manager report):
    verify claims against `git log`, run tests, check CI, run code review on
    the diff (unless `review-done=yes`), update docs/board/issues.
+   **Code review runs inline, in your own context**, both axes: standards
+   (repo conventions, style, tests) and spec (does the diff do what the
+   issue asked, nothing more). Do NOT spawn reviewer subagents; if the
+   repo's `code-review` skill fans out to `Agent` calls, ignore that part
+   and do the same two-axis review yourself. Nested fan-out from inside an
+   agent stalls.
 2. Deviations found:
    - **Authorized**: answer consult-plan's questions yourself, from the
      written plan (roadmap, ADRs, decision register). Pick your own

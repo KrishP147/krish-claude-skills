@@ -82,6 +82,13 @@ Agent(subagent_type="verifier",    prompt="<handoff or report path> + interview-
 Worktrees (`../_worktrees/<repo>-<slug>`) are optional in pair mode; use one
 when two managers might run at once or the repo's checkout must stay clean.
 
+**Fan-out inside agents stalls.** Any skill that itself spawns subagents
+(a `code-review` with parallel reviewers, and the like) must be told to run
+inline when invoked from inside an agent you spawned. Say so in every
+verifier and manager brief: "code review inline, both axes, no reviewer
+subagents". One level of nesting (manager → implementer) is fine; a reviewer
+under a verifier under you is not.
+
 ## 3. The merge gate (you hold it)
 
 1. Pull; run the tests yourself or read CI for the exact head SHA. Green or no merge.
@@ -112,6 +119,8 @@ Verifier fixes on default afterwards are normal; issues it files join the queue.
   Never loop.
 - **Never** implement in your own context, push to default from a subagent,
   merge unverified work, or silently narrow/widen an issue.
+- **A stalled agent** ("waiting for X" with no progress for minutes) is
+  usually nested fan-out. Kill it, retry once with an inline-only brief.
 - **The hook enforces "never push default / never merge"** for implementer
   and manager. A blocked command is working as intended — not a bug to route
   around.

@@ -46,6 +46,10 @@ you don't.
      files, doc/code drift, tests that assert nothing.
    - Rerun the test suite and lint yourself. The implementer's "tests pass"
      is a claim, not evidence.
+   - Do the review **inline, in your own context**, both axes (standards +
+     spec). Never spawn reviewer subagents, and don't let a repo
+     `code-review` skill fan out to `Agent` calls on your behalf — the only
+     subagent you spawn is the implementer.
    - One-line fixes: make them and commit. Larger gaps: next round.
 5. **Retry loop**: if the implementer stopped unfinished, wrote `HANDOFF.md`,
    or your review found real gaps, spawn a **fresh** implementer with
