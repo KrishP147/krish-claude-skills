@@ -37,8 +37,9 @@ git worktree add ../_worktrees/<repo>-<slug> -b <prefix>/<slug> <default>
 If the worktree or branch already exists, reuse it (say so).
 
 Creating the branch starts the work, so mark the issue started yourself (the
-manager comes later and won't). Issue number only; skip for free text or a
-repo with no board (roadmap doc only). Projects v2: move the card to "In
+manager comes later and won't). Issue number only; skip for free text, a
+repo with no board (roadmap doc only), or a reused worktree/branch (already
+marked). Projects v2: move the card to "In
 Progress" with `gh project item-edit` (IDs looked up as `session-handoff` §3
 does, never guessed); label fallback: `gh issue edit <n> --remove-label
 status:todo --add-label status:in-progress`. Then one issue comment: "Started
