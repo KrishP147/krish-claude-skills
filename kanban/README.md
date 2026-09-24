@@ -1,6 +1,8 @@
 # kanban
 
-General-purpose versions of a roadmap-driven workflow I originally built for one specific project (`praxic`), rebuilt to run against **GitHub Issues + a GitHub Projects (v2) board** instead of that project's own `docs/roadmap.md` / `docs/STATUS.md` / `docs/decisions.md` files — so it works on any repo, not just that one.
+General-purpose versions of a roadmap-driven workflow originally built for one project's own `docs/roadmap.md` / `docs/STATUS.md` / `docs/decisions.md` files, rebuilt to run against **GitHub Issues + a GitHub Projects (v2) board** — so it works on any repo.
+
+Each skill folder has a `SKILL.md` (the prompt Claude follows) and a `README.md` (how to use it and how it works, for you).
 
 ## Prerequisite: the `project` OAuth scope
 

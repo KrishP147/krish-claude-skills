@@ -13,6 +13,21 @@ both you and Claude see it and can wrap up: `/divide` the rest, then
 `/session-handoff` (or, for an orchestrator, the §6 handoff cycle in
 `meta-orchestrator`). Heuristic only; `/context` is the precise check.
 
+How it works: on every prompt you submit, Claude Code passes the hook JSON
+on stdin; the script reads `transcript_path`, and if that file is at least
+`THRESHOLD_MB` (1.5) it prints the warning (stdout is injected into the
+conversation). Below the threshold, or on any error, it prints nothing and
+never blocks the prompt.
+
+Related: [`divide`](../kanban/divide/), [`session-handoff`](../kanban/session-handoff/),
+[`meta-orchestrator`](../meta-orchestrator/) (rotates early on this warning).
+
+Example output once a long session crosses the threshold:
+
+```
+[smart-zone] Session transcript is ~1.6 MB - context has likely left the smart zone (~100-120k tokens; this is a heuristic, verify with /context). Wrap up: run /divide on the remaining work, then /session-handoff, and continue in a fresh session.
+```
+
 Install into a repo:
 
 ```bash
