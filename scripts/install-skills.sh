@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Installs every skill in this repo into ~/.claude/skills/ (personal, global
 # across all repos/terminals). Safe to re-run - each skill is replaced fresh.
-# Also installs agents/*.md and agents/hooks/ into ~/.claude/agents/.
+# Also copies agents/*.md and agents/hooks/ over ~/.claude/agents/; agents
+# there that aren't in this repo are warned about, never deleted.
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -9,11 +10,13 @@ target="${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}"
 agents_target="${CLAUDE_AGENTS_DIR:-$HOME/.claude/agents}"
 
 pybin=""
-if command -v python3 >/dev/null 2>&1; then
-  pybin="python3"
-elif command -v python >/dev/null 2>&1; then
-  pybin="python"
-fi
+# first candidate that actually runs Python 3 (skips e.g. the Windows Store python3 stub)
+for c in python3 python; do
+  if command -v "$c" >/dev/null 2>&1 && "$c" -c 'import sys; sys.exit(sys.version_info[0] != 3)' >/dev/null 2>&1; then
+    pybin="$c"
+    break
+  fi
+done
 
 if [[ -n "$pybin" ]]; then
   if ! "$pybin" "$repo_root/scripts/lint.py"; then
@@ -54,3 +57,12 @@ printf '  - %s\n' "${installed[@]}"
 
 printf 'Installed %d agent(s) to %s:\n' "${#installed_agents[@]}" "$agents_target"
 printf '  - %s\n' "${installed_agents[@]}"
+
+stale=()
+while IFS= read -r -d '' existing; do
+  name="$(basename "$existing")"
+  [[ -f "$repo_root/agents/$name" ]] || stale+=("$name")
+done < <(find "$agents_target" -maxdepth 1 -type f -name "*.md" ! -name "README.md" -print0)
+if (( ${#stale[@]} )); then
+  printf 'warning: stale agent(s) not in repo, remove manually: %s\n' "${stale[*]}" >&2
+fi

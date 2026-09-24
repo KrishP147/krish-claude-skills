@@ -107,7 +107,7 @@ cd skills
 .\scripts\install-skills.ps1       # Windows PowerShell
 ```
 
-This lints the repo, then copies every skill into `~/.claude/skills/<name>/` and every agent into `~/.claude/agents/` (personal, global: works in every repo, every terminal, no need to clone this repo inside your project). Re-running it is safe; each skill and agent is replaced fresh.
+This lints the repo, then copies every skill into `~/.claude/skills/<name>/` and every agent into `~/.claude/agents/` (personal, global: works in every repo, every terminal, no need to clone this repo inside your project). Re-running it is safe: each skill is replaced fresh; agents are copied over the existing files, and any `*.md` in `~/.claude/agents/` that is no longer in this repo is flagged ("stale agent(s) not in repo, remove manually: …"), never deleted, since it may be your own.
 
 ## Update
 
@@ -117,7 +117,7 @@ git pull
 ./scripts/install-skills.sh        # or .\scripts\install-skills.ps1
 ```
 
-The install copies files rather than symlinking, so a `git pull` alone changes nothing in `~/.claude/` until you re-run the script. Open a new Claude Code session afterwards; agents and skills are read at startup.
+The install copies files rather than symlinking, so a `git pull` alone changes nothing in `~/.claude/` until you re-run the script. An agent removed from the repo stays installed until you delete it; the script's stale-agent warning names it. Open a new Claude Code session afterwards; agents and skills are read at startup.
 
 Prefer to install by hand, or just one skill? Copy the folder yourself:
 

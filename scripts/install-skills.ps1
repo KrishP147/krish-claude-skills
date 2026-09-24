@@ -1,6 +1,7 @@
 # Installs every skill in this repo into ~/.claude/skills/ (personal, global
 # across all repos/terminals). Safe to re-run - each skill is replaced fresh.
-# Also installs agents/*.md and agents/hooks/ into ~/.claude/agents/.
+# Also copies agents/*.md and agents/hooks/ over ~/.claude/agents/; agents
+# there that aren't in this repo are warned about, never deleted.
 $ErrorActionPreference = "Stop"
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
@@ -52,3 +53,11 @@ $installed | ForEach-Object { Write-Host "  - $_" }
 
 Write-Host "Installed $($installedAgents.Count) agent(s) to $agentsTarget :"
 $installedAgents | ForEach-Object { Write-Host "  - $_" }
+
+$agentsSrc = Join-Path $repoRoot "agents"
+$stale = @(Get-ChildItem -Path $agentsTarget -Filter "*.md" -File | Where-Object {
+    $_.Name -ne "README.md" -and -not (Test-Path (Join-Path $agentsSrc $_.Name))
+} | ForEach-Object { $_.Name })
+if ($stale.Count -gt 0) {
+    Write-Warning "stale agent(s) not in repo, remove manually: $($stale -join ', ')"
+}
