@@ -25,7 +25,7 @@ A red default branch outranks everything else — surface it as priority #1 if f
 ## 3. Pull candidate tasks
 
 - Projects v2: `gh project item-list <number> --owner <owner> --format json`, filter to the "Todo"/"Ready" status. `gh project item-list` is eventually consistent and can return an empty list minutes after items were added. If empty, cross-check with `gh issue list --repo <owner>/<repo> --state open --json number,title,projectItems` before concluding the board is empty; only then fall through to "run kanban-setup".
-- Label fallback: `gh issue list --label "status:todo" --state open --json number,title,labels`.
+- Label fallback: first `gh issue list --label "status:in-review" --state open --json number,title,labels` — list these ahead of everything else, tagged "awaiting update-progress / verification" (finished sessions nobody has verified yet); then `gh issue list --label "status:todo" --state open --json number,title,labels`.
 - Roadmap-doc fallback: walk the doc's execution order; a linked issue that is still open is a candidate, in doc order. Skip items the doc marks as gated/blocked unless nothing else remains.
 
 Sort by a priority label if one exists (`priority:high` etc.), else by roadmap order, else by issue age (oldest first).

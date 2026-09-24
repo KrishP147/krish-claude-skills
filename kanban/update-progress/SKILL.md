@@ -14,6 +14,8 @@ argument-hint: "path to handoff doc (auto-finds newest matching file in the OS t
    A roadmap/README **"current phase" marker follows where merges are landing, not where the last checkbox is.** If this session's merges belong to a later phase than the marker, move it and mark the earlier phase "done except gated (#…)" listing its open gated/parked items — a phase with gated leftovers never "finishes", so waiting for that leaves the marker stale for months. Status summaries and README feature lists must name every capability merged in the current phase; a merged feature the README doesn't mention is docs drift, fix it here.
 
 5. **Update the board, if there is one.** Locate it the way `next` §1 does; a repo whose queue is a roadmap doc has no card to move — skip the card step, keep the issue comment/close. Comment on the relevant issue(s) with a summary. If complete and verified, close the issue and move its card to Done. If incomplete, leave it open and set the card/label to reflect where it actually stands.
+   - Projects v2: move the card with `gh project item-edit` exactly as `session-handoff` §3 does (look up the IDs first; don't guess them).
+   - Label fallback: complete and verified → swap `status:in-review` for `status:done` (or `status:in-progress` for `status:done` if the card was never moved to review); partial/blocked → leave the label as is.
 
 6. **Escalate deviations.** If the handoff's `## Board status` section lists deviations or innovations, automatically call the Skill tool with `"consult-plan"` to reconcile them before finishing.
 
