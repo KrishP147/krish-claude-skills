@@ -34,7 +34,7 @@ Get-ChildItem -Path $repoRoot -Recurse -Filter "SKILL.md" -Depth 2 | ForEach-Obj
 }
 
 $installedAgents = @()
-Get-ChildItem -Path (Join-Path $repoRoot "agents") -Filter "*.md" -File | ForEach-Object {
+Get-ChildItem -Path (Join-Path $repoRoot "agents") -Filter "*.md" -File | Where-Object { $_.Name -ne "README.md" } | ForEach-Object {
     $dest = Join-Path $agentsTarget $_.Name
     Copy-Item -Force $_.FullName $dest
     $installedAgents += [System.IO.Path]::GetFileNameWithoutExtension($_.Name)

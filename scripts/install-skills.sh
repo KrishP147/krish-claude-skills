@@ -42,7 +42,7 @@ while IFS= read -r -d '' agent_md; do
   name="$(basename "$agent_md")"
   cp "$agent_md" "$agents_target/$name"
   installed_agents+=("${name%.md}")
-done < <(find "$repo_root/agents" -maxdepth 1 -name "*.md" -print0)
+done < <(find "$repo_root/agents" -maxdepth 1 -name "*.md" ! -name "README.md" -print0)
 
 mkdir -p "$agents_target/hooks"
 if [[ -d "$repo_root/agents/hooks" ]]; then

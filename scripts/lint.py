@@ -35,7 +35,11 @@ def find_skill_files(root):
 
 
 def find_agent_files(root):
-    return sorted(glob.glob(os.path.join(root, "agents", "*.md")))
+    # README.md is human docs, not an agent definition.
+    return sorted(
+        p for p in glob.glob(os.path.join(root, "agents", "*.md"))
+        if os.path.basename(p).lower() != "readme.md"
+    )
 
 
 def parse_frontmatter(text):
