@@ -24,14 +24,14 @@ Model-invocable, so asking for "an update doc" works too.
 
 ## How it works
 
-1. **Find the source.** Reports folder (default `./reports/`); `ledger.md` there. No ledger → reconstructs one from `git log`, merged PRs, issues and the conversation, and says so.
+1. **Find the source.** Reports folder (default the repo's `skilleddocs/reports/`); ledger at `skilleddocs/orchestrator/ledger.md`. No ledger → reconstructs one from `git log`, merged PRs, issues and the conversation, and says so.
 2. **Watermark.** `.last-reported` holds the last reported ledger entry. The new report covers `watermark + 1 … latest`. Earlier items only reappear under "Revisions to earlier reports" if they changed (revert, reversed decision, broken "done").
 3. **Fixed sections:** header (report #, date, time range in your local zone, ledger range), Summary, Done (table), What worked, What didn't, Concerns (ranked, blocking flagged), Decisions made on your behalf, Manual steps for you, Revisions to earlier reports, Next up. Empty → "none".
 4. **Link everything.** Resolves the repo URL once; `#n`, `PR #n`, commit hashes and decision ids (if the repo has a decisions doc/ADRs) become links in every section. Checks the link count afterwards.
 5. **Write** `NNN-YYYY-MM-DD-<slug>.md` (or `.docx`) in the reports folder; never overwrites an earlier report; reads it back to check.
 6. **Advance the watermark:** updates `.last-reported`, appends a `report` entry to the ledger. Prints the path and entry range.
 
-Reads: `ledger.md`, `.last-reported`, git/gh. Writes: the report, `.last-reported`, a ledger entry.
+Reads: `skilleddocs/orchestrator/ledger.md`, `.last-reported`, git/gh. Writes: the report, `.last-reported`, a ledger entry.
 
 ## Related
 

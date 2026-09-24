@@ -17,7 +17,7 @@ Model-invocable: another skill calls the Skill tool with `handoff-auto` (optiona
 
 ## How it works
 
-1. Summarises the conversation into a document in the **OS temp directory**.
+1. Summarises the conversation into a document under the repo's **`skilleddocs/handoffs/`** (OS temp dir only when there is no repo).
 2. Adds a "suggested skills" section.
 3. References existing artifacts by path/URL instead of duplicating them.
 4. Redacts secrets and personal data.
@@ -32,4 +32,4 @@ Model-invocable: another skill calls the Skill tool with `handoff-auto` (optiona
 
 ## Example
 
-`session-handoff` calls `handoff-auto` with `#42`; it writes a handoff file in the OS temp dir and ends its output with that absolute path, which `session-handoff` then extends.
+`session-handoff` calls `handoff-auto` with `#42`; it writes a handoff file under `skilleddocs/handoffs/` and ends its output with that absolute path, which `session-handoff` then extends.

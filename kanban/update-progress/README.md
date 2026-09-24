@@ -12,11 +12,11 @@ In a fresh session after [`session-handoff`](../session-handoff/). The `verifier
 
 ## How to invoke
 
-`/update-progress [path to handoff doc]` — omit the path to use the newest handoff-looking file in the OS temp dir. Model-invocable.
+`/update-progress [path to handoff doc]` — omit the path to use the newest file in `skilleddocs/handoffs/` (then the OS temp dir). Model-invocable.
 
 ## How it works
 
-1. **Locate the handoff** (given path, or newest in temp dir).
+1. **Locate the handoff** (given path, or newest in `skilleddocs/handoffs/`, then temp dir).
 2. **Verify claims:** `git log` since the session start; runs the repo's test suite if one is detectable. Doesn't trust "tests pass".
 3. **Code review** via the `code-review` skill if product code changed.
 4. **Update docs that exist:** roadmap checkboxes, status doc rows + dated entry, decisions doc (only if a decision was recorded), else README status section / `CHANGELOG.md` / `docs/`. Moves a "current phase" marker to where merges are landing; fixes README feature lists that miss merged capabilities. Never invents doc structure.

@@ -31,11 +31,10 @@ session unless you explicitly report otherwise.
 - If turns are running low, write the handoff before anything else —
   a truncated handoff is useless.
 - **Stuck, or past ~100k tokens of context** (a smart-zone warning, or you
-  can feel it): write `HANDOFF.md` in the repo root — what's done, what's
+  can feel it): write `skilleddocs/HANDOFF.md` — what's done, what's
   not, the exact next step, anything you tried that failed — commit it, and
   stop. A manager agent reads it and starts a fresh implementer from it.
-  (`handoff-auto` writes the temp-dir handoff for humans; `HANDOFF.md` in
-  the worktree is the one a manager can see.)
+  (`handoff-auto` writes the `skilleddocs/handoffs/` document for humans; `skilleddocs/HANDOFF.md` is the short one a manager restarts from.)
 
 ## Finish
 

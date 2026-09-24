@@ -26,18 +26,18 @@ Installed by `scripts/install-skills.*` into `~/.claude/agents/`, with `hooks/` 
 - **You pass:** working directory (absolute, usually a worktree on the task branch), task + acceptance checklist, rules (branch prefix, protected branch, commit style, `CONTRIBUTING.md`/`AGENTS.md` path), `max_rounds` (default 3).
 - **How it works:**
   1. Orients read-only; confirms every file the task cites exists; detects the test command.
-  2. Writes a ≤40-line brief (includes "if stuck, write `HANDOFF.md`, commit, stop").
+  2. Writes a ≤40-line brief (includes "if stuck, write `skilleddocs/HANDOFF.md`, commit, stop").
   3. Spawns an `implementer` (not `fork`, no `isolation`) and keeps a wait alive until it finishes; if forced to report early, titles the report **INTERIM — implementer still running** (callers must not act on it).
   4. Reviews every round itself, inline: commit scope, `git diff <base>...HEAD`, reruns tests + lint. Fixes one-liners; larger gaps go to the next round. Never spawns reviewer subagents.
-  5. Retries with a **fresh** implementer + `HANDOFF.md`/findings, up to `max_rounds`.
-- **You get back:** branch + base/head SHA, commits, tests (command + counts) and lint run by it, review findings and who fixed each, rounds used, `HANDOFF.md` path if unfinished, manual steps (e.g. the push).
+  5. Retries with a **fresh** implementer + `skilleddocs/HANDOFF.md`/findings, up to `max_rounds`.
+- **You get back:** branch + base/head SHA, commits, tests (command + counts) and lint run by it, review findings and who fixed each, rounds used, `skilleddocs/HANDOFF.md` path if unfinished, manual steps (e.g. the push).
 - **Guard:** same `guard-git.py` hook as the implementer. Never pushes, merges or opens PRs — the caller does.
 
 ## implementer
 
 - **Role:** implements one well-specified issue from a kickoff brief on its own branch. `maxTurns: 200`.
 - **You pass:** the kickoff brief verbatim + branch prefix + protected branch (from `manager` or the orchestrator).
-- **How it works:** branches `<prefix>/issue-<n>-<slug>` off a freshly pulled default; commits small; runs the repo's detected test command before claiming done. Multi-session task or low turns → writes the handoff early. Stuck or past ~100k tokens → writes `HANDOFF.md` in the repo root (done / not done / next step / failed attempts), commits it, stops, so a manager can restart a fresh implementer from it.
+- **How it works:** branches `<prefix>/issue-<n>-<slug>` off a freshly pulled default; commits small; runs the repo's detected test command before claiming done. Multi-session task or low turns → writes the handoff early. Stuck or past ~100k tokens → writes `skilleddocs/HANDOFF.md` (done / not done / next step / failed attempts), commits it, stops, so a manager can restart a fresh implementer from it.
 - **You get back:** calls `session-handoff` (which wraps `handoff-auto`); final message ends with the handoff document's absolute path on its own line.
 - **Guard:** `guard-git.py` hook (below).
 

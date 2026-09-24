@@ -35,4 +35,4 @@ Follows any handoff filename/section rules in the repo's `CLAUDE.md`/`AGENTS.md`
 /session-handoff 31
 ```
 
-Writes the handoff to the OS temp dir with "Board status: #31 partial — export works, tests for large files missing; deviation: used streaming writer", moves #31's card to In Progress, prints the path.
+Writes the handoff to `skilleddocs/handoffs/` with "Board status: #31 partial — export works, tests for large files missing; deviation: used streaming writer", moves #31's card to In Progress, prints the path.

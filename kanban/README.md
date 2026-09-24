@@ -30,3 +30,5 @@ next  →  (you implement, in a fresh session)  →  session-handoff  →  updat
 - **[`kanban-setup`](kanban-setup/)** — bootstrap: creates the board if a repo doesn't have one yet, and can backfill issues from whatever's already documented in the repo (`mode=current` for open/planned work, `mode=retroactive` for already-done work, `mode=both`).
 
 If a repo has no board yet, start with `kanban-setup`.
+
+Handoffs and decisions these skills produce land in the repo's `skilleddocs/` folder (root README, "Where skills write"); the board holds the queue, `skilleddocs/` holds the record.

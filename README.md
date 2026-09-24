@@ -27,10 +27,11 @@ Each tier builds on the one above: `pair` is one orchestrator loop without the b
 | [`repo-scrub`](repo-scrub/README.md) | Scans a GitHub repo's full git history for secrets and oversized files, lets you pick exactly what to scrub, rewrites history safely, and only then flips the repo private → public. User-invoked only (`/repo-scrub`). | `gh`, [`gitleaks`](https://github.com/gitleaks/gitleaks), [`git-filter-repo`](https://github.com/newren/git-filter-repo), [`git-sizer`](https://github.com/github/git-sizer) |
 | [`grilling`](grilling/README.md) *(Matt Pocock)* | Interviews you relentlessly, one round of questions at a time with a recommendation attached to each, until a plan or decision is fully stress-tested. | none |
 | [`grill-me`](grill-me/README.md) *(Matt Pocock)* | Short alias for `grilling`. | none |
-| [`handoff`](handoff/README.md) *(Matt Pocock)* | Compacts the current conversation into a handoff document so a fresh session can pick up where it left off. User-invoked only (`/handoff`). | none |
+| [`grill-docs`](grill-docs/README.md) | `grilling` with a paper trail: writes the Q→A transcript to `skilleddocs/grills/` as each round settles and appends every decision to `skilleddocs/decisions.md`, so planners, verifiers and teammates can read what was decided and why. | none |
+| [`handoff`](handoff/README.md) *(Matt Pocock, save path modified)* | Compacts the current conversation into a handoff document so a fresh session can pick up where it left off; saved under `skilleddocs/handoffs/`. User-invoked only (`/handoff`). | none |
 | [`handoff-auto`](handoff-auto/README.md) *(derived from Pocock's `handoff`)* | Same document, but callable by the model, so other skills and subagents can end a session unattended. Prints the file path as its last line. | none |
 | [`pair`](pair/README.md) | Runs one task in an isolated git worktree: resolves the issue (syncs upstream first on a fork, checks the cited files still exist), spawns the `manager` agent, shows its report, and only then pushes and opens the PR itself. Agents never touch the remote. | `gh`; `manager` + `implementer` agents installed |
-| [`meta-orchestrator`](meta-orchestrator/README.md) | Runs a repo's backlog unattended: spawns `planner` → `manager` (or `implementer`, `execution: flat`) → `verifier` in a loop, holds the merge gate itself (tests + CI green or no merge), appends every event to a ledger, and writes `orchestrator-handoff.md` after a budget of merges so `/meta-orchestrator <repo> resume` continues in a fresh session. | `gh`; the four agents installed; a repo with a kanban board |
+| [`meta-orchestrator`](meta-orchestrator/README.md) | Runs a repo's backlog unattended: spawns `planner` → `manager` (or `implementer`, `execution: flat`) → `verifier` in a loop, holds the merge gate itself (tests + CI green or no merge), reads `skilleddocs/` for the design record, appends every event to `skilleddocs/orchestrator/ledger.md` (committed in the repo), and writes `orchestrator-handoff.md` after a budget of merges so `/meta-orchestrator <repo> resume` continues in a fresh session. | `gh`; the four agents installed; a repo with a kanban board |
 | [`progress-report`](progress-report/README.md) | Turns the orchestrator's ledger into a short report covering only what happened since the last one (watermarked, never overlapping): done, what worked, what didn't, concerns, decisions made on your behalf, manual steps for you. Markdown by default, `.docx` on request. | `docx` skill or `python-docx` for the Word option |
 
 ### [`kanban/`](kanban/) — GitHub-Issues-as-kanban-board workflow
@@ -51,8 +52,8 @@ Needs `gh auth refresh -s project -s read:project` once (see [`kanban/README.md`
 | Agent | Model | Preloads | Guard rails |
 |---|---|---|---|
 | [`planner`](agents/README.md#planner) ([def](agents/planner.md)) | opus | `next`, `divide` | no Edit/Write; proposes splits, never creates issues; returns a ≤40-line kickoff brief |
-| [`manager`](agents/README.md#manager) ([def](agents/manager.md)) | opus | `handoff-auto` | spawns its own `implementer`, reviews the diff and reruns tests itself, restarts a fresh implementer from `HANDOFF.md` when one stalls (≤3 rounds); same guard hook as the implementer; never pushes |
-| [`implementer`](agents/README.md#implementer) ([def](agents/implementer.md)) | sonnet | `handoff-auto`, `session-handoff` | a `PreToolUse` hook ([`guard-git.py`](agents/hooks/guard-git.py)) blocks pushes to `main`/`master`, force-pushes and `gh pr merge`; writes `HANDOFF.md` in the repo when stuck or past the smart zone; ends with the handoff path |
+| [`manager`](agents/README.md#manager) ([def](agents/manager.md)) | opus | `handoff-auto` | spawns its own `implementer`, reviews the diff and reruns tests itself, restarts a fresh implementer from `skilleddocs/HANDOFF.md` when one stalls (≤3 rounds); same guard hook as the implementer; never pushes |
+| [`implementer`](agents/README.md#implementer) ([def](agents/implementer.md)) | sonnet | `handoff-auto`, `session-handoff` | a `PreToolUse` hook ([`guard-git.py`](agents/hooks/guard-git.py)) blocks pushes to `main`/`master`, force-pushes and `gh pr merge`; writes `skilleddocs/HANDOFF.md` when stuck or past the smart zone; ends with the handoff path |
 | [`verifier`](agents/README.md#verifier) ([def](agents/verifier.md)) | opus | `update-progress`, `consult-plan`, `next` | verifies against git log/tests/CI, reviews the diff, lists every question it answered on your behalf |
 
 Full explainer (inputs, outputs, procedure, guard hook): [`agents/README.md`](agents/README.md). They also work on their own: "use the planner agent to brief the next issue" is a fine prompt without the orchestrator. Set `GUARD_PROTECTED_BRANCHES=main,develop` to change what the hook protects. Agents can spawn agents (`manager` → `implementer`); only the built-in `fork` type can't nest.
@@ -61,7 +62,40 @@ Full explainer (inputs, outputs, procedure, guard hook): [`agents/README.md`](ag
 
 Not auto-installed. [`smartzone.py`](hooks/smartzone.py) is a `UserPromptSubmit` hook that warns in-conversation when the transcript suggests context has left the smart zone (~100k tokens), so a session wraps up instead of degrading. Copy + settings snippet in [`hooks/README.md`](hooks/README.md).
 
-`grilling`, `grill-me`, and `handoff` are by [Matt Pocock](https://github.com/mattpocock/skills) (MIT, see [`THIRD_PARTY_LICENSES.md`](THIRD_PARTY_LICENSES.md)), included verbatim; `handoff-auto` is his `handoff` with one frontmatter line removed. `npx skills add mattpocock/skills` pulls his full set directly if you want more than these. Everything else here is original.
+`grilling` and `grill-me` are by [Matt Pocock](https://github.com/mattpocock/skills) (MIT, see [`THIRD_PARTY_LICENSES.md`](THIRD_PARTY_LICENSES.md)), included verbatim; `handoff` is his with the save location changed to `skilleddocs/handoffs/`, and `handoff-auto` is that with one frontmatter line removed. `grill-docs` is original and only wraps his `grilling`. `npx skills add mattpocock/skills` pulls his full set directly if you want more than these. Everything else here is original.
+
+## Where skills write: `skilleddocs/`
+
+Every skill or agent here that produces a document writes it **inside the repo it is working on**, under one directory, so the paper trail is versioned with the code and any teammate or fresh session finds it in the same place:
+
+```
+skilleddocs/
+  README.md            what each folder holds (template below)
+  decisions.md         append-only decision register (D1, D2, ...) — grill-docs, consult-plan, verifier
+  grills/              one transcript per grill-docs session
+  handoffs/            session handoffs — handoff, handoff-auto, session-handoff, implementer
+  HANDOFF.md           short "stuck" note an implementer leaves for a manager (deleted once picked up)
+  orchestrator/        scope.md, ledger.md, orchestrator-handoff.md, reports/<manager reports> — meta-orchestrator
+  reports/             progress reports + .last-reported watermark — progress-report
+```
+
+Rules: local dates in filenames, never UTC; the register is append-only (reverse a decision with a new row); nothing under `skilleddocs/` is a spec or a roadmap — plans live wherever the repo keeps docs, and `skilleddocs/` points at them. The orchestrator commits its files on the default branch as it goes (`docs(skilleddocs): ledger NNN`). A repo's `AGENTS.md` / `CLAUDE.md` can override any path, so older repos with `docs/decisions.md` or a `reports/` folder keep working. Skills that only read or act on GitHub (`next`, `divide`, `kanban-setup`, `pair`, `repo-scrub`) write nothing here.
+
+Template for a repo's `skilleddocs/README.md`:
+
+```markdown
+# skilleddocs
+
+Documents written by Claude Code skills (github.com/KrishP147/skills). Versioned so agents and people share one record.
+
+- decisions.md — append-only decision register; cite as D<k>
+- grills/ — grilling transcripts (asked, recommended, answered)
+- handoffs/ — end-of-session handoffs; the newest is the next session's starting brief
+- orchestrator/ — meta-orchestrator scope contract, ledger, handoff, manager reports
+- reports/ — progress reports and the watermark
+
+Plans and specs live in docs/; this folder records how they were decided and carried out.
+```
 
 ## Install
 

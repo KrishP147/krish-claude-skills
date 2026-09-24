@@ -14,7 +14,7 @@ merge gate and the ledger stay with you.
 ## 0. Before anything: confirm, then ask once
 
 1. **Locate the repo and its workflow.** Read its contributing guide (or
-   `CLAUDE.md` / `AGENTS.md`). Confirm the skills it names exist (repo
+   `CLAUDE.md` / `AGENTS.md`) and `skilleddocs/` if present. Confirm the skills it names exist (repo
    `.claude/skills/`, then `~/.claude/skills/`); **repo-local wins**. Confirm
    `~/.claude/agents/{planner,implementer,verifier,manager}.md` exist; if
    missing, tell the user to run the repo's install script and meanwhile use
@@ -27,22 +27,29 @@ merge gate and the ledger stay with you.
    execution mode (§1) and handoff budget (§6) if the user cares. State
    defaults for the rest. Then ask again only for destructive or
    scope-changing decisions.
-4. Write answers to `scope.md` in the reports folder (or scratchpad) — the
+4. Write answers to `skilleddocs/orchestrator/scope.md` **in the repo** — the
    run's contract. It must contain: repo path, default branch, branch prefix,
-   exclusions, ordering, merge style, interview authorization, reports folder,
-   `execution:`, `handoff_budget:`.
+   exclusions, ordering, merge style, interview authorization, reports folder
+   (default `skilleddocs/reports/`), `execution:`, `handoff_budget:`. Commit
+   it on the default branch (`docs(skilleddocs): orchestrator scope`).
+
+**Read `skilleddocs/` first.** If the repo has one, its `decisions.md`,
+`grills/`, `handoffs/` and any plan doc it points at are the design record
+this run must respect: cite decision ids (`D<k>`) in kickoff briefs, and
+treat a `handoffs/` entry addressed to the orchestrator as the starting
+brief. `skilleddocs/README.md` in that repo says what each folder holds.
 
 ## 1. The agents
 
 | Step | Agent | Model | You pass | You get back |
 |---|---|---|---|---|
 | Plan | `planner` | opus | repo path + scope contract (exclusions, ordering) | ≤40-line kickoff brief: issue + checklist, key files, ADRs, branch, gotchas, model, divide? |
-| Implement (`pair`) | `manager` | opus | worktree/repo path + kickoff brief verbatim + rules + max_rounds | branch/commits, tests it reran, review findings fixed, rounds used, `HANDOFF.md` if unfinished |
+| Implement (`pair`) | `manager` | opus | worktree/repo path + kickoff brief verbatim + rules + max_rounds | branch/commits, tests it reran, review findings fixed, rounds used, `skilleddocs/HANDOFF.md` if unfinished |
 | Implement (`flat`) | `implementer` | sonnet | kickoff brief verbatim + branch prefix + protected branch | handoff doc absolute path, last line |
 | Verify | `verifier` | opus | handoff path (or manager report path) + interview authorization yes/no + `review-done=<yes|no>` | verified-by, fixes / issues filed, decided-for-you, manual steps, `next` |
 
 **`execution: pair` (default)** — you spawn a `manager` per issue; it owns
-the implementer and the retry loop (fresh implementer from `HANDOFF.md`,
+the implementer and the retry loop (fresh implementer from `skilleddocs/HANDOFF.md`,
 ≤3 rounds), reviews the diff and reruns tests itself. Costs an extra opus
 context per issue; buys you a review before the merge gate and no
 implementer-stuck babysitting. Tell the verifier `review-done=yes`: it skips
@@ -67,8 +74,8 @@ planner  →  manager | implementer  →  merge gate (you)  →  verifier  →  
 ```
 
 Each arrow is a **fresh Agent call**; never reuse one. The handoff doc (flat)
-or the manager report saved to the reports folder (pair) is the only bridge to
-the verifier.
+or the manager report saved to `skilleddocs/orchestrator/reports/` (pair) is
+the only bridge to the verifier.
 
 ```
 Agent(subagent_type="planner",     prompt="<repo path> + <scope.md contents>")
@@ -99,7 +106,9 @@ under a verifier under you is not.
    fix yourself). The manager's review is an input, not a substitute.
 3. Push the branch yourself (agents can't); merge in the repo's style (merge
    vs squash); delete branch; fast-forward default.
-4. Append a ledger entry (§5). Count it toward the handoff budget (§6).
+4. Append a ledger entry (§5), commit it on the default branch
+   (`docs(skilleddocs): ledger <NNN>`) and push. Count it toward the handoff
+   budget (§6).
 
 Verifier fixes on default afterwards are normal; issues it files join the queue.
 
@@ -111,13 +120,14 @@ Verifier fixes on default afterwards are normal; issues it files join the queue.
   for you". Copy it into the ledger. If not authorized, record the deviation
   and leave the plan untouched.
 - **Divide** when the planner says multi-session, a manager returns
-  unfinished after its rounds, an implementer reports leaving the smart zone,
+  unfinished after its rounds, an implementer reports leaving the smart zone (it wrote
+  `skilleddocs/HANDOFF.md`),
   or a "not done" list won't fit one session. The planner proposes the split;
   you approve.
 - **Consult the plan yourself** (strong subagent) when unsure it still fits.
 - **Failures:** one retry, tighter brief, fresh session (in pair mode the
   manager already did its rounds — your retry is a new manager with its
-  `HANDOFF.md`). Second failure: file or split the issue, record it, move on.
+  `skilleddocs/HANDOFF.md`). Second failure: file or split the issue, record it, move on.
   Never loop.
 - **Never** implement in your own context, push to default from a subagent,
   merge unverified work, or silently narrow/widen an issue.
@@ -130,7 +140,9 @@ Verifier fixes on default afterwards are normal; issues it files join the queue.
 
 ## 5. The ledger
 
-`ledger.md` in the reports folder (or scratchpad). Append only:
+`skilleddocs/orchestrator/ledger.md` **in the repo**, committed on the default
+branch after every entry, so the design record and the work record live
+together and survive any machine. Append only:
 
 ```
 ### <NNN> · <local ISO timestamp, e.g. 2026-09-23 17:42 EDT> · <kind: plan|implement|merge|verify|decision|problem|manual|handoff>
@@ -156,15 +168,15 @@ ledger, no honest report.
 
 ## 6. Your own context: the handoff cycle
 
-Your state is already external — `scope.md`, `ledger.md`, git — so a fresh
-orchestrator loses nothing. Rotate on purpose instead of degrading.
+Your state is already external — `skilleddocs/orchestrator/{scope,ledger}.md`
+and git — so a fresh orchestrator loses nothing. Rotate on purpose instead of degrading.
 
 1. **Budget**: `handoff_budget: 10` merged loops per orchestrator session by
    default; the user can override it in `scope.md`. Also rotate early when a
    smart-zone warning fires (see `hooks/smartzone.py` in the skills repo) or
    you notice yourself re-reading files you already know.
 2. **At budget**, finish the loop you're in (never hand off mid-merge), then:
-   - write `<reports>/orchestrator-handoff.md`:
+   - write `skilleddocs/orchestrator/orchestrator-handoff.md` and commit it:
      - scope contract (copy of `scope.md`, or its path + hash)
      - last ledger entry number
      - loop state: which agent last ran, on which issue and branch, its
@@ -174,8 +186,8 @@ orchestrator loses nothing. Rotate on purpose instead of degrading.
    - append a ledger `handoff` entry (issue = none; what = budget reached /
      smart zone; manual step = the resume command)
    - tell the user in two lines and **stop**. Don't start another loop.
-3. **`resume`**: read `scope.md`, `orchestrator-handoff.md`, and the ledger
-   tail (last 5 entries). Skip §0's questions — the contract stands; only
+3. **`resume`**: read `skilleddocs/orchestrator/{scope.md,orchestrator-handoff.md}`
+   and the ledger tail (last 5 entries). Skip §0's questions — the contract stands; only
    re-run §0.2's recon to catch anything that changed while no orchestrator
    was running (new commits on default, new PRs, a stray branch). Continue
    the loop from the recorded step. Reset the budget counter. Log a

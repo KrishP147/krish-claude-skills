@@ -1,6 +1,6 @@
 # handoff
 
-*By Matt Pocock (MIT), included verbatim. `SKILL.md` is the prompt Claude follows; this file is for you.*
+*By Matt Pocock (MIT); one sentence modified so the file saves under `skilleddocs/handoffs/`. `SKILL.md` is the prompt Claude follows; this file is for you.*
 
 ## What it does
 
@@ -18,13 +18,13 @@ Compacts the current conversation into a handoff document so a fresh session can
 
 ## How it works
 
-1. Summarises the conversation into a document saved in the **OS temp directory** (not your workspace).
+1. Summarises the conversation into a document saved in the repo under **`skilleddocs/handoffs/<date>-<slug>.md`** (OS temp dir only when there is no repo).
 2. Adds a "suggested skills" section naming skills the next session should load.
 3. References existing artifacts (specs, plans, ADRs, issues, commits, diffs) by path/URL instead of copying them.
 4. Redacts secrets and personal data.
 5. If you passed an argument, tailors the doc to that next-session focus.
 
-Output: one handoff file in the temp dir.
+Output: one handoff file under `skilleddocs/handoffs/`.
 
 ## Related
 
@@ -37,4 +37,4 @@ Output: one handoff file in the temp dir.
 /handoff finish the CSV export and write its tests
 ```
 
-Writes a Markdown file in the OS temp dir with state, open questions, file references, and "suggested skills". Start a fresh session and point it at that file.
+Writes a Markdown file under `skilleddocs/handoffs/` with state, open questions, file references, and "suggested skills". Start a fresh session and point it at that file.

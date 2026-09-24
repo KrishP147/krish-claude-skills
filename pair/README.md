@@ -29,10 +29,10 @@ Model-invocable, so "pair on issue 12" also works.
 1. **Resolve the task.** Issue number → `gh issue view`; text → Claude writes a 3–6 item acceptance checklist. Collects default branch, branch prefix (from your `CLAUDE.md`, else `feat`), test command, `CONTRIBUTING.md`/`AGENTS.md`. On a fork (`upstream` remote): fetches upstream, fast-forwards the default branch, and checks every file/symbol the issue cites still exists.
 2. **Isolate.** `git worktree add ../_worktrees/<repo>-<slug> -b <prefix>/<slug> <default>` (slug = `issue-<n>-<kebab-title>`). Reuses an existing worktree/branch if present.
 3. **Delegate.** One `Agent(subagent_type="manager")` call with working dir, task + checklist, verified/missing files, rules, implementer model, `max_rounds: 3`, "never push, merge, or open a PR". Not `fork`.
-4. **On return.** Ignores a report titled **INTERIM** (implementer still running) and waits for the manager's next handback. Then shows the manager's report verbatim; reruns tests if the report is thin or risky; if `HANDOFF.md` exists (unfinished), offers another round. Pushes + `gh pr create … Closes #<n>` on `--push` or your go. Never merges. PR review feedback later → step 3 again in the same worktree.
-5. **Print.** Branch, worktree path, PR URL (or "not pushed"), test result, rounds used, `HANDOFF.md` path. Doesn't clean up the worktree until the PR merges.
+4. **On return.** Ignores a report titled **INTERIM** (implementer still running) and waits for the manager's next handback. Then shows the manager's report verbatim; reruns tests if the report is thin or risky; if `skilleddocs/HANDOFF.md` exists (unfinished), offers another round. Pushes + `gh pr create … Closes #<n>` on `--push` or your go. Never merges. PR review feedback later → step 3 again in the same worktree.
+5. **Print.** Branch, worktree path, PR URL (or "not pushed"), test result, rounds used, `skilleddocs/HANDOFF.md` path. Doesn't clean up the worktree until the PR merges.
 
-Writes: a worktree + branch; commits (via agents); `HANDOFF.md` in the worktree if unfinished.
+Writes: a worktree + branch; commits (via agents); `skilleddocs/HANDOFF.md` in the worktree if unfinished.
 
 ## Related
 

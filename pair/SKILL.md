@@ -63,7 +63,7 @@ While it runs, do nothing in the worktree.
    rounds, unfinished).
 2. Rerun the tests yourself in the worktree if the report is thin or the
    task touched anything risky. One-line fixes: commit them.
-3. **Unfinished** (`HANDOFF.md` present): say what's left; offer a second
+3. **Unfinished** (`skilleddocs/HANDOFF.md` present): say what's left; offer a second
    `pair` round from the handoff, or leave the branch for the user.
 4. **Push** if `--push` or the user says go:
    ```
@@ -78,5 +78,5 @@ While it runs, do nothing in the worktree.
 ## 5. Print
 
 Branch, worktree path, PR URL (or "not pushed"), test result, rounds used,
-`HANDOFF.md` path if any. Then stop; don't offer to clean up the worktree
+`skilleddocs/HANDOFF.md` path if any. Then stop; don't offer to clean up the worktree
 until the PR is merged (`git worktree remove <path>`).

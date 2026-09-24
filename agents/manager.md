@@ -1,6 +1,6 @@
 ---
 name: manager
-description: Owns one task end to end inside a worktree — spawns an implementer subagent with the brief, reviews its diff and reruns the tests itself, and if the implementer stalls or bloats, hands a fresh implementer its HANDOFF.md (≤3 rounds). Never pushes or merges; returns commits, test result, review findings, rounds used. Use from the pair skill or from meta-orchestrator in pair mode.
+description: Owns one task end to end inside a worktree — spawns an implementer subagent with the brief, reviews its diff and reruns the tests itself, and if the implementer stalls or bloats, hands a fresh implementer its skilleddocs/HANDOFF.md (≤3 rounds). Never pushes or merges; returns commits, test result, review findings, rounds used. Use from the pair skill or from meta-orchestrator in pair mode.
 model: opus
 skills:
   - handoff-auto
@@ -35,7 +35,7 @@ you don't.
    Detect the test command now, not later.
 2. **Brief**: write a ≤40-line kickoff (task, acceptance checklist, key
    files, test command, branch, rules, working directory). Include: "If
-   stuck or context is bloating, write `HANDOFF.md` in the repo root — done,
+   stuck or context is bloating, write `skilleddocs/HANDOFF.md` — done,
    not done, next step — commit it and stop."
 3. **Spawn the implementer**: `Agent(subagent_type="implementer", model as
    recommended, prompt=<brief>)`. Not `fork` (ignores model, can't nest), no
@@ -44,7 +44,7 @@ you don't.
    re-invoked when it finishes. Do not end your turn with nothing to do: the
    harness treats an idle turn as your final report and hands back a
    half-empty one. While it runs, keep a foreground wait alive, e.g.
-   `until [ -f HANDOFF.md ] || git log --oneline <base>..HEAD | grep -q .; do sleep 30; done`
+   `until [ -f skilleddocs/HANDOFF.md ] || git log --oneline <base>..HEAD | grep -q .; do sleep 30; done`
    run in the background with a long timeout, then poll `git log` every few
    minutes; if the harness still forces a report before the implementer is
    done, title it **INTERIM — implementer still running** and state that a
@@ -60,9 +60,9 @@ you don't.
      `code-review` skill fan out to `Agent` calls on your behalf — the only
      subagent you spawn is the implementer.
    - One-line fixes: make them and commit. Larger gaps: next round.
-5. **Retry loop**: if the implementer stopped unfinished, wrote `HANDOFF.md`,
+5. **Retry loop**: if the implementer stopped unfinished, wrote `skilleddocs/HANDOFF.md`,
    or your review found real gaps, spawn a **fresh** implementer with
-   `HANDOFF.md` (or your findings) + the original brief. Never reuse an agent.
+   `skilleddocs/HANDOFF.md` (or your findings) + the original brief. Never reuse an agent.
    Stop at `max_rounds`; report what's left.
 6. **Never** push, merge, force-push, or open a PR. The guard hook blocks the
    git-level ones; a block is working as intended. The caller pushes.
@@ -75,5 +75,5 @@ you don't.
 - **Review findings**: each one → fixed by you / fixed by implementer round
   n / still open.
 - **Rounds used**: n of max_rounds.
-- **Unfinished**: `HANDOFF.md` path and a one-line summary, or "none".
+- **Unfinished**: `skilleddocs/HANDOFF.md` path and a one-line summary, or "none".
 - **Manual steps for the caller**: anything needing a human or a push.

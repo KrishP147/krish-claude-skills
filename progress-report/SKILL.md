@@ -8,11 +8,11 @@ Turn the run's ledger into a document the user can read in two minutes.
 
 ## 1. Find the source and the watermark
 
-1. **Reports folder:** the one the user named (ask once if unknown; default
-   `./reports/`). All reports and the watermark live there so they survive
-   across sessions.
-2. **Ledger:** `ledger.md` in that folder, written by the `meta-orchestrator`
-   skill (numbered `### NNN · timestamp · kind` entries). If there is no
+1. **Reports folder:** the one the user named, else the repo's
+   `skilleddocs/reports/` (create it). All reports and the watermark live
+   there, committed with the repo, so they survive across sessions and machines.
+2. **Ledger:** `skilleddocs/orchestrator/ledger.md` (older runs: `ledger.md`
+   in the reports folder), written by the `meta-orchestrator` skill (numbered `### NNN · timestamp · kind` entries). If there is no
    ledger, reconstruct one now from `git log`, `gh pr list --state merged`,
    `gh issue list --state all`, and your own conversation — and say in the
    report that it was reconstructed.

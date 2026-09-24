@@ -4,9 +4,9 @@ description: Model-invocable variant of handoff — writes the handoff document 
 argument-hint: "What will the next session be used for?"
 ---
 
-Derived from Matt Pocock's `handoff` skill (MIT, see THIRD_PARTY_LICENSES.md); only the frontmatter differs.
+Derived from Matt Pocock's `handoff` skill (MIT, see THIRD_PARTY_LICENSES.md); the frontmatter and the save location differ.
 
-Write a handoff document summarising the current conversation so a fresh agent can continue the work. Save to the temporary directory of the user's OS - not the current workspace.
+Write a handoff document summarising the current conversation so a fresh agent can continue the work. Save it in the repo under `skilleddocs/handoffs/<YYYY-MM-DD>-<slug>.md` (create the directory; local date, not UTC; slug = the argument or 2-4 words for the topic). If there is no repo or git working tree, fall back to the OS temporary directory. A repo's `AGENTS.md` / `CLAUDE.md` may prescribe a different folder or filename prefix; follow it.
 
 Include a "suggested skills" section in the document, naming which skills the next agent should call the Skill tool for.
 
