@@ -36,6 +36,15 @@ git worktree add ../_worktrees/<repo>-<slug> -b <prefix>/<slug> <default>
 `--no-worktree`: `git switch -c <prefix>/<slug> <default>` in place.
 If the worktree or branch already exists, reuse it (say so).
 
+Creating the branch starts the work, so mark the issue started yourself (the
+manager comes later and won't). Issue number only; skip for free text or a
+repo with no board (roadmap doc only). Projects v2: move the card to "In
+Progress" with `gh project item-edit` (IDs looked up as `session-handoff` §3
+does, never guessed); label fallback: `gh issue edit <n> --remove-label
+status:todo --add-label status:in-progress`. Then one issue comment: "Started
+on branch `<branch>`". If the board update errors, say so and carry on — it
+never blocks the task.
+
 ## 3. Delegate
 
 One call. Do not `fork` (ignores the model override and cannot nest).

@@ -34,4 +34,4 @@ A repo's `CLAUDE.md`/`AGENTS.md` may override any of this (source of truth, gati
 
 ## 4. Present
 
-Show the top 1–3 candidates: title, issue number, a size estimate if a `size:S/M/L`-style label exists (else say "unestimated"), and a suggested model — well-specified, narrowly-scoped work suits a fast model; ambiguous, architecture-heavy, or explicitly `needs-design`-labeled work suits a stronger reasoning model. Ask the user which to start, or take "go" as picking the top one.
+Show the top 1–3 candidates: title, issue number, a size estimate if a `size:S/M/L`-style label exists (else say "unestimated"), and a suggested model — well-specified, narrowly-scoped work suits a fast model; ambiguous, architecture-heavy, or explicitly `needs-design`-labeled work suits a stronger reasoning model. Ask the user which to start, or take "go" as picking the top one. Picking here does not claim the card: the `implementer` agent or `pair` moves it to In Progress when it creates the branch, so a card still in Todo may be one someone picked but never started.

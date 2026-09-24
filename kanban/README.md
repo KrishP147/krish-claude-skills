@@ -22,6 +22,8 @@ next  →  (you implement, in a fresh session)  →  session-handoff  →  updat
  └──────────────────── (prints "run next" when done) ───────────────────────┘
 ```
 
+Card status flow: todo → in-progress (`implementer`/`pair`, on branch create) → in-review (`session-handoff`) → done (`update-progress`).
+
 - **[`next`](next/)** — what to work on, pulled from the board.
 - **[`session-handoff`](session-handoff/)** — run when you're wrapping up an implementation session.
 - **[`update-progress`](update-progress/)** — run in a fresh session afterward: verifies the handoff's claims, updates docs + the board + the issue.

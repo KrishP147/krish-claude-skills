@@ -37,7 +37,7 @@ Installed by `scripts/install-skills.*` into `~/.claude/agents/`, with `hooks/` 
 
 - **Role:** implements one well-specified issue from a kickoff brief on its own branch. `maxTurns: 200`.
 - **You pass:** the kickoff brief verbatim + branch prefix + protected branch (from `manager` or the orchestrator).
-- **How it works:** branches `<prefix>/issue-<n>-<slug>` off a freshly pulled default; commits small; runs the repo's detected test command before claiming done. Multi-session task or low turns → writes the handoff early. Stuck or past ~100k tokens → writes `skilleddocs/HANDOFF.md` (done / not done / next step / failed attempts), commits it, stops, so a manager can restart a fresh implementer from it.
+- **How it works:** branches `<prefix>/issue-<n>-<slug>` off a freshly pulled default; if it created the branch, marks the issue started (card → In Progress, or `status:todo` → `status:in-progress`; skipped with no board) and comments "Started on branch …", fail-soft (an error goes in the handoff, never blocks); commits small; runs the repo's detected test command before claiming done. Multi-session task or low turns → writes the handoff early. Stuck or past ~100k tokens → writes `skilleddocs/HANDOFF.md` (done / not done / next step / failed attempts), commits it, stops, so a manager can restart a fresh implementer from it.
 - **You get back:** calls `session-handoff` (which wraps `handoff-auto`); final message ends with the handoff document's absolute path on its own line.
 - **Guard:** `guard-git.py` hook (below).
 

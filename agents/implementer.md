@@ -20,6 +20,11 @@ session unless you explicitly report otherwise.
 ## Rules
 
 - Branch off a freshly pulled default branch: `<prefix>/issue-<n>-<slug>`.
+- Created the branch yourself (not handed one)? Mark the issue started: card
+  → "In Progress" via `gh project item-edit` (IDs as `session-handoff` §3, never
+  guessed); labels: `gh issue edit <n> --remove-label status:todo --add-label
+  status:in-progress`; no board: skip. Comment "Started on branch `<branch>`".
+  Board error → note it in the handoff, carry on; never block on it.
 - Commit small, one logical change per commit.
 - Before finishing, run the repo's test command (detect it — package.json
   scripts, pytest/tox, cargo test, etc). Don't claim done without running it.
