@@ -32,7 +32,11 @@ watermark, cover everything, and title it "Full report".
 ## 2. Structure (fixed order; drop a section only if truly empty, and say "none")
 
 - **Header:** `Progress report #N · <date> · covers <start time> → <end time>
-  (ledger NNN–MMM)`; one line naming the repo/branch and the previous report.
+  (<zone>, ledger NNN–MMM)`; one line naming the repo/branch and the previous
+  report. **Timestamps are the user's local time zone**, and the header
+  states the zone. Never estimate a time: take it from `date`,
+  `git log --date=format-local:'%Y-%m-%d %H:%M'`, or PR `createdAt` /
+  `mergedAt` (UTC — convert). A ledger stamped in UTC gets converted too.
 - **Summary** — 3–6 bullets. What moved, in plain words.
 - **Done** — one bullet per issue/PR: `#n <title> — merged PR #m · tests
   <result> · CI green/red`. Link with full GitHub URLs.
@@ -59,8 +63,8 @@ two pages.
 section), bullet lists, and a Markdown table for **Done** (Issue · Title ·
 PR · Tests · CI). Use full GitHub URLs for every issue/PR/commit reference
 (Markdown links, not bare `#n`). Filename: `NNN-YYYY-MM-DD-<short-slug>.md`
-(zero-padded report number), saved in the reports folder. Never overwrite an
-earlier report.
+(zero-padded report number; the **local** date from `date`, not UTC), saved
+in the reports folder. Never overwrite an earlier report.
 
 **If the user passed `docx`:** build the .docx exactly as before — use the
 `docx` skill if available (docx-js path), otherwise `python-docx`. Heading

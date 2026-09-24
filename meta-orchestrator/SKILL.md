@@ -131,13 +131,17 @@ Verifier fixes on default afterwards are normal; issues it files join the queue.
 `ledger.md` in the reports folder (or scratchpad). Append only:
 
 ```
-### <NNN> · <ISO timestamp> · <kind: plan|implement|merge|verify|decision|problem|manual|handoff>
+### <NNN> · <local ISO timestamp, e.g. 2026-09-23 17:42 EDT> · <kind: plan|implement|merge|verify|decision|problem|manual|handoff>
 - issue/PR: #n / PR #m
 - what: one or two lines
 - verified by: pytest 73/73 · CI run <id> green · (or "not verified: <why>")
 - decided for you: (kind=decision only) Q → A, reason
 - manual step for user: (only if one exists)
 ```
+
+Timestamps are the **user's local time zone**, zone named once at the top
+of the ledger. Never estimate: take them from `date`, `git log
+--date=format-local`, or PR `createdAt`/`mergedAt` converted from UTC.
 
 `progress-report` reports everything after the last reported entry. No
 ledger, no honest report.
