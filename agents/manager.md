@@ -40,6 +40,15 @@ you don't.
 3. **Spawn the implementer**: `Agent(subagent_type="implementer", model as
    recommended, prompt=<brief>)`. Not `fork` (ignores model, can't nest), no
    `isolation` (the worktree already isolates).
+   **Then wait for it.** The implementer runs in the background and you are
+   re-invoked when it finishes. Do not end your turn with nothing to do: the
+   harness treats an idle turn as your final report and hands back a
+   half-empty one. While it runs, keep a foreground wait alive, e.g.
+   `until [ -f HANDOFF.md ] || git log --oneline <base>..HEAD | grep -q .; do sleep 30; done`
+   run in the background with a long timeout, then poll `git log` every few
+   minutes; if the harness still forces a report before the implementer is
+   done, title it **INTERIM — implementer still running** and state that a
+   final report follows. A caller must never act on an INTERIM report.
 4. **Review it yourself**, every round:
    - `git log` since the base: are the commits small, scoped, on the branch?
    - `git diff <base>...HEAD`: correctness, scope creep, secrets, personal

@@ -56,6 +56,9 @@ While it runs, do nothing in the worktree.
 
 ## 4. On return
 
+0. A report titled **INTERIM** (implementer still running) is not a result.
+   Wait for the same manager's next handback; do not push, rerun, or judge
+   the branch from an interim report.
 1. Show the manager's report verbatim (branch, commits, tests, findings,
    rounds, unfinished).
 2. Rerun the tests yourself in the worktree if the report is thin or the

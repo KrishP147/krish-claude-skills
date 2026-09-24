@@ -86,7 +86,9 @@ when two managers might run at once or the repo's checkout must stay clean.
 (a `code-review` with parallel reviewers, and the like) must be told to run
 inline when invoked from inside an agent you spawned. Say so in every
 verifier and manager brief: "code review inline, both axes, no reviewer
-subagents". One level of nesting (manager → implementer) is fine; a reviewer
+subagents". A manager handback titled **INTERIM** (its implementer still
+running) is not a result: wait for that agent's next handback before the
+merge gate. One level of nesting (manager → implementer) is fine; a reviewer
 under a verifier under you is not.
 
 ## 3. The merge gate (you hold it)
