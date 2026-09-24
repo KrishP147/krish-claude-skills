@@ -37,6 +37,20 @@ watermark, cover everything, and title it "Full report".
   states the zone. Never estimate a time: take it from `date`,
   `git log --date=format-local:'%Y-%m-%d %H:%M'`, or PR `createdAt` /
   `mergedAt` (UTC — convert). A ledger stamped in UTC gets converted too.
+
+  **Detect the zone, don't assume it.** The machine's zone is the user's
+  zone unless they say otherwise. Run one of these once and reuse the answer
+  for every timestamp in the report and the filename:
+
+  ```
+  python -c "import datetime as d; n=d.datetime.now().astimezone(); print(n.tzname(), n.strftime('%z'), n.strftime('%Y-%m-%d %H:%M'))"
+  date +'%Z %z %Y-%m-%d %H:%M'                 # POSIX / Git Bash
+  (Get-TimeZone).Id; Get-Date -Format 'yyyy-MM-dd HH:mm'   # PowerShell
+  ```
+
+  Convert UTC values (`gh ... --json createdAt,mergedAt`, CI logs, `Z`-suffixed
+  ISO strings) with `python -c "...fromisoformat(s).astimezone()"` — never by
+  subtracting a guessed offset. If the ledger header names a zone, use that.
 - **Summary** — 3–6 bullets. What moved, in plain words.
 - **Done** — one bullet per issue/PR: `#n <title> — merged PR #m · tests
   <result> · CI green/red`. Link with full GitHub URLs.
@@ -56,6 +70,36 @@ watermark, cover everything, and title it "Full report".
 Style: bullets over prose, one idea per bullet, no filler, no restating the
 issue bodies. Numbers go in the Done table, not in sentences. Aim for one to
 two pages.
+
+## 2b. Link every reference (all sections, not just Done)
+
+The reader will click. Every issue, PR, commit and decision mentioned anywhere
+in the report is a hyperlink, in Markdown and in .docx alike.
+
+1. Resolve the repo URL once: `gh repo view --json url -q .url`, or from
+   `git remote get-url origin` (strip `.git`, turn `git@github.com:` into
+   `https://github.com/`). If the ledger names a different repo for some
+   entries, resolve that one too.
+2. Turn references into links with these rules, applied to the whole text of
+   every section (header, summary, concerns, decisions, next up — not only
+   the Done table):
+   - `#123` → `<repo>/issues/123` (GitHub redirects if it is really a PR)
+   - `PR #123` / `pull #123` → `<repo>/pull/123`
+   - a 7–40 char hex commit hash → `<repo>/commit/<hash>`
+   - `D-12`, `ADR-0005`, `Q6`-style decision ids → the repo's decision
+     register / ADR file if the repo has one (`docs/decisions.md`,
+     `docs/adr/0005-*.md`), otherwise leave as text
+   - leave alone anything already inside a link, a code span, or a URL
+3. Link text stays short (`#123`, `PR #123`, `a1b2c3d`); the URL carries the
+   detail. Do not print bare URLs in prose.
+4. Implementation hint: build the document from plain strings and run one
+   regex pass (`(?<![\w/])(PR )?#(\d+)\b`, `\b[0-9a-f]{7,40}\b`) that emits a
+   link node per match — in Markdown `[#123](url)`, in python-docx a
+   `w:hyperlink` run. Apply it in one helper used by every paragraph and
+   table cell, so no section can forget.
+5. Read the file back and confirm the count of links is at least the count of
+   `#n` mentions in the ledger range. Fewer means a section was written
+   without the helper.
 
 ## 3. Build the document
 

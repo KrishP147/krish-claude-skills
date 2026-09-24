@@ -140,8 +140,14 @@ Verifier fixes on default afterwards are normal; issues it files join the queue.
 ```
 
 Timestamps are the **user's local time zone**, zone named once at the top
-of the ledger. Never estimate: take them from `date`, `git log
---date=format-local`, or PR `createdAt`/`mergedAt` converted from UTC.
+of the ledger. Detect it at the start of the run — the machine's zone is the
+user's unless they say otherwise:
+`python -c "import datetime as d; print(d.datetime.now().astimezone().tzname())"`
+(or `date +%Z` / PowerShell `(Get-TimeZone).Id`). Never estimate: take times
+from `date`, `git log --date=format-local`, or PR `createdAt`/`mergedAt`
+converted from UTC with `fromisoformat(...).astimezone()`. Issue and PR
+numbers in ledger entries are written as `#n` / `PR #n` so `progress-report`
+can turn every one into a link.
 
 `progress-report` reports everything after the last reported entry. No
 ledger, no honest report.
