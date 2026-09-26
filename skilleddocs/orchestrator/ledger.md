@@ -35,3 +35,15 @@ Times: America/Toronto (EDT).
 - issue/PR: #14, #15 / PR #26
 - what: Windows-safe worktree teardown (links first); manager spawns implementer blocking, no sleep-poll.
 - verified by: lint OK after merging master into branch
+
+### 007 · 2026-09-26 01:05 EDT · verify
+- issue/PR: PR #16, PR #26
+- what: verifier: claims match git log; #4 #14 #15 closed status:done; filed #27 (lint counts headings in code fences); flagged untracked `.lint-forbidden.txt` risk → orchestrator added it to .git/info/exclude.
+- verified by: lint OK on 286c9a5
+- decided for you: keep PR #16's committed handoff → repo opts into skilleddocs/; fence bug → issue #27; .gitignore fix → left to #20
+
+### 008 · 2026-09-26 01:15 EDT · merge
+- issue/PR: #1 / PR #28
+- what: site slice 1 — stdlib build, Claude-Code-style terminal home, locked `/` input, grouped list, placeholder pages, first CI workflow, vercel.json.
+- verified by: CI run 36218781515 green; local lint + 9/9 unittest + 8/8 node; desktop screenshot reviewed
+- manual step for user: Vercel import repo (build `python3 scripts/build_site.py`, out `site/dist`) + DNS CNAME skills → cname.vercel-dns.com
