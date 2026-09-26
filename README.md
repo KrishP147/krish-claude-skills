@@ -33,6 +33,7 @@ Each tier builds on the one above: `pair` is one orchestrator loop without the b
 | [`pair`](pair/README.md) | Runs one task in an isolated git worktree: resolves the issue (syncs upstream first on a fork, checks the cited files still exist), spawns the `manager` agent, shows its report, and only then pushes and opens the PR itself. Agents never touch the remote. | `gh`; `manager` + `implementer` agents installed |
 | [`meta-orchestrator`](meta-orchestrator/README.md) | Runs a repo's backlog unattended: spawns `planner` → `manager` (or `implementer`, `execution: flat`) → `verifier` in a loop, holds the merge gate itself (tests + CI green or no merge), reads `skilleddocs/` for the design record, appends every event to `skilleddocs/orchestrator/ledger.md` (committed in the repo), and writes `orchestrator-handoff.md` after a budget of merges so `/meta-orchestrator <repo> resume` continues in a fresh session. | `gh`; the four agents installed; a kanban board, `status:*` labels, or a roadmap doc (whatever `next` finds) |
 | [`progress-report`](progress-report/README.md) | Turns the orchestrator's ledger into a short report covering only what happened since the last one (watermarked, never overlapping): done, what worked, what didn't, concerns, decisions made on your behalf, manual steps for you. Markdown by default, `.docx` on request. | `docx` skill or `python-docx` for the Word option |
+| [`spend-gate`](spend-gate/README.md) | Gates any billable action (GPU pods, paid APIs, paid tiers, cloud credits) behind a cost estimate, a live balance check, and an explicit yes for that specific action — a budget cap is never itself approval. Logs every approval to `skilleddocs/spend.md`. Pairs with the optional [`hooks/spend-guard.py`](hooks/README.md#spend-guardpy--block-billable-commands-without-an-approval) hook. | none |
 
 ### [`kanban/`](kanban/) — GitHub-Issues-as-kanban-board workflow
 
@@ -60,7 +61,7 @@ Full explainer (inputs, outputs, procedure, guard hook): [`agents/README.md`](ag
 
 ### [`hooks/`](hooks/) — optional per-repo hooks
 
-Not auto-installed. [`smartzone.py`](hooks/smartzone.py) is a `UserPromptSubmit` hook that warns in-conversation when the transcript suggests context has left the smart zone (~100k tokens), so a session wraps up instead of degrading. Copy + settings snippet in [`hooks/README.md`](hooks/README.md).
+Not auto-installed. [`smartzone.py`](hooks/smartzone.py) is a `UserPromptSubmit` hook that warns in-conversation when the transcript suggests context has left the smart zone (~100k tokens), so a session wraps up instead of degrading. [`spend-guard.py`](hooks/spend-guard.py) is a `PreToolUse` hook that blocks known billable commands/MCP calls (GPU pod creation, paid deploys, ...) unless an approval token from the [`spend-gate`](spend-gate/README.md) skill already exists. Copy + settings snippets in [`hooks/README.md`](hooks/README.md).
 
 `grilling` and `grill-me` are by [Matt Pocock](https://github.com/mattpocock/skills) (MIT, see [`THIRD_PARTY_LICENSES.md`](THIRD_PARTY_LICENSES.md)), included verbatim; `handoff` is his with the save location changed to `skilleddocs/handoffs/`, and `handoff-auto` is that with one frontmatter line removed. `grill-docs` is original and only wraps his `grilling`. `npx skills add mattpocock/skills` pulls his full set directly if you want more than these. Everything else here is original.
 
@@ -77,6 +78,8 @@ skilleddocs/
   HANDOFF.md           short "stuck" note an implementer leaves for a manager (deleted once picked up)
   orchestrator/        scope.md, ledger.md, orchestrator-handoff.md, reports/<manager reports> — meta-orchestrator
   reports/             progress reports + .last-reported watermark — progress-report
+  spend.md             approval log (when, amount, purpose, price source, resource id) — spend-gate
+  spend-approvals/     one-shot approval files consumed by hooks/spend-guard.py — spend-gate
 ```
 
 Rules: local dates in filenames, never UTC; the register is append-only (reverse a decision with a new row); nothing under `skilleddocs/` is a spec or a roadmap — plans live wherever the repo keeps docs, and `skilleddocs/` points at them. The orchestrator commits its files on the default branch as it goes (`docs(skilleddocs): ledger NNN`). A repo's `AGENTS.md` / `CLAUDE.md` can override any path, so older repos with `docs/decisions.md` or a `reports/` folder keep working. Skills that only read or act on GitHub (`next`, `divide`, `kanban-setup`, `pair`, `repo-scrub`) write nothing here.
@@ -93,6 +96,7 @@ Documents written by Claude Code skills (github.com/KrishP147/skills). Versioned
 - handoffs/ — end-of-session handoffs; the newest is the next session's starting brief
 - orchestrator/ — meta-orchestrator scope contract, ledger, handoff, manager reports
 - reports/ — progress reports and the watermark
+- spend.md, spend-approvals/ — billable-action approval log and one-shot approval tokens (spend-gate)
 
 Plans and specs live in docs/; this folder records how they were decided and carried out.
 ```
