@@ -62,8 +62,8 @@ Asks outcome/audience/emphasis, gets "go" (defaults accepted); inventories 6 doc
 ## Related
 
 - [`repo-scrub`](../repo-scrub/README.md) — the next step: full git-history scan and the private → public flip. This skill never does either.
-- `gap-scan` — surveys repos and ranks gaps; a good way to pick which repo to showcase next.
-- `teammate-brief` — human-facing handoff; the internal counterpart to a public README.
+- [`gap-scan`](../gap-scan/README.md) — surveys repos and ranks gaps; a good way to pick which repo to showcase next.
+- [`teammate-brief`](../teammate-brief/README.md) — human-facing handoff; the internal counterpart to a public README.
 
 ## Prereqs
 
