@@ -53,14 +53,27 @@ Installed by `scripts/install-skills.*` into `~/.claude/agents/`, with `hooks/` 
 
 ## hooks/guard-git.py
 
-`PreToolUse` hook on `Bash`, wired in the `implementer` and `manager` frontmatter as `python "$HOME/.claude/agents/hooks/guard-git.py"`. Reads the hook JSON, splits the command on `&&` / `||` / `;`, and exits 2 (blocks, reason on stderr) for:
+`PreToolUse` hook on `Bash|PowerShell`, wired in the `implementer` and `manager` frontmatter. Exits 2 (blocks, reason on stderr) or 0 (allows).
 
-- `git push` with `--force` / `-f` / `--force-with-lease`, `--delete` / `-d`, or `--mirror`
-- `git push` naming a protected branch (incl. `HEAD:main`), or a bare `git push` while on one
-- `gh pr merge`, `gh repo delete`
+**It is a guardrail, not a sandbox.** It stops an agent's honest mistakes and the obvious workarounds; it can't see inside script files, pre-existing shell aliases/functions, or `curl` to the GitHub API. Pair it with GitHub branch protection (require PRs, no force-push) on the default branch.
+
+**Parsing.** Stdlib Python 3.8+. Splits the command on newlines, `;`, `&&`, `||`, `&`, `|` and `( )`, respecting quotes and dropping `# comments`; tokenizes each piece with `shlex` (POSIX). It recurses into `bash`/`sh`/`zsh -c`, `pwsh`/`powershell -Command` and `-EncodedCommand`, `cmd /c`, `eval`, `$(...)` and backticks, and `echo … | sh` / `bash <<EOF` (a shell reading stdin). Here-doc bodies fed to anything else are data, so a commit message that says "push to main" is fine. Before the git subcommand it skips `VAR=x`, `env` (incl. `-S`), `command`, `sudo`, `timeout`, `xargs`, full paths and `git.exe`, and git global options (`-C dir`, `-c k=v`, `--git-dir`, `--work-tree`, `--no-pager`, …). It resolves git aliases (`-c alias.p=push`, `git config alias.*`).
+
+**Blocked:**
+
+- `git push` with `--force*` (incl. `--force-with-lease=…`, `--force-if-includes`), a short-flag group containing `f` or `d` (`-f`, `-uf`, `-d`), `--mirror`, `--delete`, `--all`/`--branches`, `--prune`
+- a refspec starting with `+` (force, any branch), a `:branch` delete refspec, a wildcard refspec, or one whose destination is protected: `main`, `HEAD:main`, `x:refs/heads/main`, `refs/heads/main` (case-insensitive)
+- a push with no refspec (`git push`, `git push origin`) or `HEAD`/`$(git branch --show-current)` as refspec while the current branch is protected (`cd dir` and `git -C dir` are followed)
+- a refspec it can't read (`$BRANCH`, `$(…)`, `xargs`-supplied): spell the branch name out
+- `gh pr merge`, `gh repo delete`; `gh api` on `pulls/N/merge` or `merges` (any method), writes (`-X`/`--method` non-GET, or `-f`/`-F` fields) to `git/refs/heads/<protected>` or `branches/<protected>/protection`, `DELETE repos/o/r`, and graphql `mergePullRequest`/ref/repo-delete mutations
 - `git branch -D/-d/--delete <protected>`
+- an unparseable command (unbalanced quotes) that mentions `push` alongside a protected name or a force/delete marker, and any internal error while analysing a command that mentions push/merge/delete (fail closed)
 
-Protected branches: `GUARD_PROTECTED_BRANCHES` (comma list), default `main,master`. A block is working as intended, not something for the agent to route around. Self-test: `python agents/hooks/guard-git.py --self-test`.
+**Allowed (no false positives):** `git push origin krish/x`, `git push -u origin HEAD` on a feature branch, `git commit -m "fix main push"`, `git log main..HEAD`, `gh pr view 5`, `gh api repos/o/r/pulls/5`. `echo git push origin main` is allowed on purpose: the words are arguments to `echo`, nothing runs them (piped into `sh`, it's blocked).
+
+**Interpreter fallback.** The frontmatter `command:` is POSIX `sh` (Claude Code runs hook commands with `sh -c` on macOS/Linux and Git Bash on Windows). It probes `python3`, `python`, `py` for 3.8+ (stdin from `/dev/null`, so the hook JSON stays unread) and `exec`s the first that passes; if none does, it prints the reason and exits 2. A naive `python3 x || python x` would be wrong: a real block (exit 2) from the first would fall through to the second, which reads empty stdin and allows. The Windows Store `python3` stub fails the probe and is skipped. A missing hook file also exits 2 (Python's "can't open file"). Tested with Git Bash (`sh`, `bash`, `dash`), `docker run python:3.12-slim` and `python:3.8-slim` (dash; push to main → 2, feature push → 0) and `debian:bookworm-slim` (no Python → 2). One gap: on Windows without Git Bash, Claude Code falls back to PowerShell, which can't parse the `sh` command, and a non-2 exit doesn't block.
+
+Protected branches: `GUARD_PROTECTED_BRANCHES` (comma list), default `main,master`. A block is working as intended, not something for the agent to route around. Self-test (every case above, current branch injected, plus stdin end-to-end runs): `python agents/hooks/guard-git.py --self-test`.
 
 ## Example
 
