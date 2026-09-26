@@ -95,7 +95,9 @@ class DetailPagesTest(unittest.TestCase):
         self.assertIn('Linked from: <a href="/pair">', mgr)  # backlink from pair's README
         self.assertIn('Preloads: <a href="/handoff-auto">', mgr)
         self.assertIn("https://github.com/KrishP147/skills/blob/master/agents/manager.md", mgr)
-        self.assertNotIn("Verifies an implementation session", mgr.split("detail-desc")[1].split("</p>", 1)[1])
+        article = mgr.split("<article", 1)[1].split("</article>", 1)[0]
+        self.assertNotIn("Role:", article)  # labels became section headings
+        self.assertNotIn("Picks the next single unit", article)  # planner's section
 
     def test_prev_next_build_order(self):
         names = [e["name"] for e in self.entries]
