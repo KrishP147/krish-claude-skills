@@ -27,7 +27,7 @@ Installed by `scripts/install-skills.*` into `~/.claude/agents/`, with `hooks/` 
 - **How it works:**
   1. Orients read-only; confirms every file the task cites exists; detects the test command.
   2. Writes a ≤40-line brief (includes "if stuck, write `skilleddocs/HANDOFF.md`, commit, stop").
-  3. Spawns an `implementer` (not `fork`, no `isolation`) and keeps a wait alive until it finishes; if forced to report early, titles the report **INTERIM — implementer still running** (callers must not act on it).
+  3. Spawns an `implementer` (not `fork`, no `isolation`) in the foreground by default, blocking until it finishes; if it ends up backgrounded, never sleep-polls — ends the turn titled **INTERIM — implementer still running** and relies on the completion notification (callers must not act on it).
   4. Reviews every round itself, inline: commit scope, `git diff <base>...HEAD`, reruns tests + lint. Fixes one-liners; larger gaps go to the next round. Never spawns reviewer subagents.
   5. Retries with a **fresh** implementer + `skilleddocs/HANDOFF.md`/findings, up to `max_rounds`.
 - **You get back:** branch + base/head SHA, commits, tests (command + counts) and lint run by it, review findings and who fixed each, rounds used, `skilleddocs/HANDOFF.md` path if unfinished, manual steps (e.g. the push).
