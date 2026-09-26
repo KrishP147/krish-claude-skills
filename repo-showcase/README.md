@@ -47,7 +47,7 @@ Defaults to the current repo. Model-invocable, so any of the trigger phrases abo
 
 ## Tips
 
-- Answer the §1 questions yourself if you don't have strong opinions — the recommended defaults are reasonable starting points, not filler.
+- No strong opinions on the §1 questions? Say "go" — the recommended defaults are reasonable starting points, not filler.
 - The contradicted-claims grep (§3) is worth running even if you're not ready to rewrite the README yet — it surfaces drift on its own.
 - Run this before `repo-scrub`, not after — a clean working tree makes the history scan's findings easier to read.
 
@@ -62,7 +62,8 @@ Asks outcome/audience/emphasis, gets "go" (defaults accepted); inventories 6 doc
 ## Related
 
 - [`repo-scrub`](../repo-scrub/README.md) — the next step: full git-history scan and the private → public flip. This skill never does either.
-- `gap-scan` and `teammate-brief` are related ideas, not yet merged into this repo.
+- `gap-scan` — surveys repos and ranks gaps; a good way to pick which repo to showcase next.
+- `teammate-brief` — human-facing handoff; the internal counterpart to a public README.
 
 ## Prereqs
 

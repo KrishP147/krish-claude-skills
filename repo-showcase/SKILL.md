@@ -69,10 +69,10 @@ order:
    `<!-- screenshot: paste path/URL here -->` or `<!-- demo GIF/video: paste
    path/URL here -->`. Never fabricate a screenshot, GIF, or video, and never
    invent metrics/testimonials to fill the gap.
-4. **Quickstart** — the fewest steps from clone to the result in §2, verified
-   against §3's findings rather than copied from the stale doc.
+4. **Quickstart** — the fewest steps from clone to the result in item 2,
+   verified against §3's findings rather than copied from the stale doc.
 5. **Architecture** — only if the audience from §1 needs it to evaluate or
-   contribute; a diagram slot is fine, same placeholder convention as §3.
+   contribute; a diagram slot is fine, same placeholder convention as item 3.
 6. **Credits** — authors, prior art, license.
 
 Draft the full replacement text before the gate in §7; don't touch the file
@@ -105,8 +105,8 @@ Apply only on explicit yes. Skip entirely if the user doesn't want it touched.
 
 ## 7. GATE — diff, commit, push
 
-Show a diff summary (files touched, one line each) covering the README
-rewrite, any doc deletes/merges from §2, and any redactions from §5.
+Show the diff: the README rewrite in full, plus a one-line-per-file summary
+of doc deletes/merges from §2 and redactions from §5.
 
 - Commit only on yes, one logical change per commit (e.g. `docs: rewrite
   README for public release`, `chore: prune stale docs`, `chore: redact
