@@ -8,10 +8,10 @@ skills:
 maxTurns: 200
 hooks:
   PreToolUse:
-    - matcher: "Bash"
+    - matcher: "Bash|PowerShell"
       hooks:
         - type: command
-          command: python "$HOME/.claude/agents/hooks/guard-git.py"
+          command: for p in python3 python py; do "$p" -c "import sys; sys.exit(sys.version_info < (3, 8))" </dev/null >/dev/null 2>&1 && exec "$p" "$HOME/.claude/agents/hooks/guard-git.py"; done; echo "guard-git blocked - no Python 3.8+ (python3/python/py) on PATH" >&2; exit 2
 ---
 
 You implement one issue from a kickoff brief. Scoped, unattended, single
