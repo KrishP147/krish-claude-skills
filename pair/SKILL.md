@@ -36,6 +36,11 @@ git worktree add ../_worktrees/<repo>-<slug> -b <prefix>/<slug> <default>
 `--no-worktree`: `git switch -c <prefix>/<slug> <default>` in place.
 If the worktree or branch already exists, reuse it (say so).
 
+If the worktree needs deps (`node_modules`, `.venv`), link them from the main
+checkout instead of reinstalling: Windows `cmd //c mklink /J <wt>\node_modules
+<main>\node_modules`; mac/linux `ln -s <main>/node_modules <wt>/node_modules`.
+Never recursive-delete through the link later — see §5.
+
 Creating the branch starts the work, so mark the issue started yourself (the
 manager comes later and won't). Issue number only; skip for free text, a
 repo with no board (roadmap doc only), or a reused worktree/branch (already
@@ -90,3 +95,10 @@ While it runs, do nothing in the worktree.
 Branch, worktree path, PR URL (or "not pushed"), test result, rounds used,
 `skilleddocs/HANDOFF.md` path if any. Then stop; don't offer to clean up the worktree
 until the PR is merged (`git worktree remove <path>`).
+
+**Teardown order** (once the PR is merged): remove any linked deps first —
+never a recursive delete (`rm -rf` / `Remove-Item -Recurse`) through a link,
+it follows the junction and wipes the main checkout's dir. Windows: `cmd //c
+rmdir <wt>\node_modules` (unlinks the junction only), or PowerShell
+`(Get-Item <link>).Delete()`; mac/linux: `rm <wt>/node_modules` (removes the
+symlink, not its target). Then `git worktree remove <path>`.
