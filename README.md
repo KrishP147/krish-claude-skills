@@ -24,7 +24,7 @@ Each tier builds on the one above: `pair` is one orchestrator loop without the b
 
 | Skill | What it does | Prereqs |
 |---|---|---|
-| [`repo-scrub`](repo-scrub/README.md) | Scans a GitHub repo's full git history for secrets and oversized files, lets you pick exactly what to scrub, rewrites history safely, and only then flips the repo private → public. User-invoked only (`/repo-scrub`). | `gh`, [`gitleaks`](https://github.com/gitleaks/gitleaks), [`git-filter-repo`](https://github.com/newren/git-filter-repo), [`git-sizer`](https://github.com/github/git-sizer) |
+| [`repo-scrub`](repo-scrub/README.md) | Scans a GitHub repo's full git history for secrets and oversized files, lets you pick exactly what to scrub, rewrites history safely, and only then flips the repo private → public. User-invoked only (`/repo-scrub`). | `gh`, [`gitleaks`](https://github.com/gitleaks/gitleaks), [`git-filter-repo`](https://github.com/newren/git-filter-repo) |
 | [`grilling`](grilling/README.md) *(Matt Pocock)* | Interviews you relentlessly, one round of questions at a time with a recommendation attached to each, until a plan or decision is fully stress-tested. | none |
 | [`grill-me`](grill-me/README.md) *(Matt Pocock)* | Short alias for `grilling`. User-invoked only (`/grill-me`); Claude auto-invokes `grilling` instead. | none |
 | [`grill-docs`](grill-docs/README.md) | `grilling` with a paper trail: writes the Q→A transcript to `skilleddocs/grills/` as each round settles and appends every decision to `skilleddocs/decisions.md`, so planners, verifiers and teammates can read what was decided and why. | none |
@@ -33,6 +33,10 @@ Each tier builds on the one above: `pair` is one orchestrator loop without the b
 | [`pair`](pair/README.md) | Runs one task in an isolated git worktree: resolves the issue (syncs upstream first on a fork, checks the cited files still exist), spawns the `manager` agent, shows its report, and only then pushes and opens the PR itself. Agents never touch the remote. | `gh`; `manager` + `implementer` agents installed |
 | [`meta-orchestrator`](meta-orchestrator/README.md) | Runs a repo's backlog unattended: spawns `planner` → `manager` (or `implementer`, `execution: flat`) → `verifier` in a loop, holds the merge gate itself (tests + CI green or no merge), reads `skilleddocs/` for the design record, appends every event to `skilleddocs/orchestrator/ledger.md` (committed in the repo), and writes `orchestrator-handoff.md` after a budget of merges so `/meta-orchestrator <repo> resume` continues in a fresh session. | `gh`; the four agents installed; a kanban board, `status:*` labels, or a roadmap doc (whatever `next` finds) |
 | [`progress-report`](progress-report/README.md) | Turns the orchestrator's ledger into a short report covering only what happened since the last one (watermarked, never overlapping): done, what worked, what didn't, concerns, decisions made on your behalf, manual steps for you. Markdown by default, `.docx` on request. | `docx` skill or `python-docx` for the Word option |
+| [`spend-gate`](spend-gate/README.md) | Gates any billable action (GPU pods, paid APIs, paid tiers, cloud credits) behind a cost estimate, a live balance check, and an explicit yes for that specific action — a budget cap is never itself approval. Logs every approval to `skilleddocs/spend.md`. Pairs with the optional [`hooks/spend-guard.py`](hooks/README.md#spend-guardpy--block-billable-commands-without-an-approval) hook. | none |
+| [`pr-watch`](pr-watch/README.md) | Watches your open PRs until merged: pulls bot and human review threads (CodeRabbit, Copilot, maintainers), fixes valid ones via `pair`, replies to or resolves the rest with cited evidence, reports CI (fork `action_required` = needs maintainer approval, not failing). Every push, reply, resolve, and bot re-trigger is gated on an explicit yes. | `gh`; `pair`'s agents for the fix step |
+| [`sitrep`](sitrep/README.md) | Live, conversational status check in 10 lines or fewer: what's running, git state, open PRs + CI, an asked-vs-done checklist, needs-you items, and a SAFE/NOT SAFE close verdict. Gated stop-and-handoff on explicit "close". Read-only otherwise. | `gh`; background-task tools if available (optional) |
+| [`repo-showcase`](repo-showcase/README.md) | Gets a repo's working tree ready to be seen: rewrites the README around outcome and demo, prunes stale docs, fixes claims the code has outdated, scans for secrets and private names, proposes GitHub metadata. Never touches history or visibility — hands off to `repo-scrub` for that. | `gh` (metadata step only) |
 
 ### [`kanban/`](kanban/) — GitHub-Issues-as-kanban-board workflow
 
@@ -60,7 +64,11 @@ Full explainer (inputs, outputs, procedure, guard hook): [`agents/README.md`](ag
 
 ### [`hooks/`](hooks/) — optional per-repo hooks
 
-Not auto-installed. [`smartzone.py`](hooks/smartzone.py) is a `UserPromptSubmit` hook that warns in-conversation when the transcript suggests context has left the smart zone (~100k tokens), so a session wraps up instead of degrading. Copy + settings snippet in [`hooks/README.md`](hooks/README.md).
+Not auto-installed. [`smartzone.py`](hooks/smartzone.py) is a `UserPromptSubmit` hook that warns in-conversation when the transcript suggests context has left the smart zone (~100k tokens), so a session wraps up instead of degrading. [`spend-guard.py`](hooks/spend-guard.py) is a `PreToolUse` hook that blocks known billable commands/MCP calls (GPU pod creation, paid deploys, ...) unless an approval token from the [`spend-gate`](spend-gate/README.md) skill already exists. Copy + settings snippets in [`hooks/README.md`](hooks/README.md).
+
+### [`site/`](site/) — static skills site
+
+Claude-Code-style terminal home (type `/` + a skill name) plus a plain list of every skill and agent, generated from this repo by [`scripts/build_site.py`](scripts/build_site.py) (stdlib only). Per-skill detail pages and comments are in progress. Build, test and deploy steps in [`site/README.md`](site/README.md).
 
 `grilling` and `grill-me` are by [Matt Pocock](https://github.com/mattpocock/skills) (MIT, see [`THIRD_PARTY_LICENSES.md`](THIRD_PARTY_LICENSES.md)), included verbatim; `handoff` is his with the save location changed to `skilleddocs/handoffs/`, and `handoff-auto` is that with one frontmatter line removed. `grill-docs` is original and only wraps his `grilling`. `npx skills add mattpocock/skills` pulls his full set directly if you want more than these. Everything else here is original.
 
@@ -77,6 +85,8 @@ skilleddocs/
   HANDOFF.md           short "stuck" note an implementer leaves for a manager (deleted once picked up)
   orchestrator/        scope.md, ledger.md, orchestrator-handoff.md, reports/<manager reports> — meta-orchestrator
   reports/             progress reports + .last-reported watermark — progress-report
+  spend.md             approval log (when, amount, purpose, price source, resource id) — spend-gate
+  spend-approvals/     one-shot approval files consumed by hooks/spend-guard.py — spend-gate
 ```
 
 Rules: local dates in filenames, never UTC; the register is append-only (reverse a decision with a new row); nothing under `skilleddocs/` is a spec or a roadmap — plans live wherever the repo keeps docs, and `skilleddocs/` points at them. The orchestrator commits its files on the default branch as it goes (`docs(skilleddocs): ledger NNN`). A repo's `AGENTS.md` / `CLAUDE.md` can override any path, so older repos with `docs/decisions.md` or a `reports/` folder keep working. Skills that only read or act on GitHub (`next`, `divide`, `kanban-setup`, `pair`, `repo-scrub`) write nothing here.
@@ -93,6 +103,7 @@ Documents written by Claude Code skills (github.com/KrishP147/skills). Versioned
 - handoffs/ — end-of-session handoffs; the newest is the next session's starting brief
 - orchestrator/ — meta-orchestrator scope contract, ledger, handoff, manager reports
 - reports/ — progress reports and the watermark
+- spend.md, spend-approvals/ — billable-action approval log and one-shot approval tokens (spend-gate)
 
 Plans and specs live in docs/; this folder records how they were decided and carried out.
 ```
@@ -134,9 +145,8 @@ For `repo-scrub`, also install its CLI prerequisites:
 # Windows
 winget install --id Gitleaks.Gitleaks -e
 pip install git-filter-repo
-winget install --id GitHub.git-sizer -e
 # mac / linux
-brew install gitleaks git-filter-repo git-sizer
+brew install gitleaks git-filter-repo
 ```
 
 For anything under `kanban/`:
