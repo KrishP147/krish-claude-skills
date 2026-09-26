@@ -144,7 +144,9 @@
   });
 
   render(false);
-  if (window.matchMedia && window.matchMedia("(pointer: fine)").matches) {
+  // Home autofocuses on desktop; detail pages opt out (data-autofocus="false").
+  if (input.getAttribute("data-autofocus") !== "false" &&
+      window.matchMedia && window.matchMedia("(pointer: fine)").matches) {
     input.focus({ preventScroll: true });
   }
 })();

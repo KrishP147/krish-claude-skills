@@ -7,7 +7,7 @@ exactly what lint counts. Output (wiped + recreated every run):
   site/dist/index.html          terminal home + server-rendered skill list
   site/dist/skills.json         full data (name, description, summary,
                                 group, source, readme)
-  site/dist/<name>/index.html   placeholder detail page per skill/agent
+  site/dist/<name>/index.html   detail page per skill/agent (site_detail.py)
   site/dist/404.html
   site/dist/*.css|*.js          copied from site/src/
 
@@ -22,8 +22,8 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lint  # noqa: E402
+import site_detail  # noqa: E402
 
-REPO_URL = "https://github.com/KrishP147/skills"
 GROUPS = ("core", "kanban", "agents")
 STATIC_EXTS = (".css", ".js")
 # Abbreviations that end in '.' but don't end a sentence.
@@ -54,24 +54,26 @@ def collect(root):
     """Return entries sorted by group order then name."""
     entries = []
     for path in lint.find_skill_files(root):
-        fm, _body = lint.parse_frontmatter(read_text(path))
+        text = read_text(path)
+        fm, _body = lint.parse_frontmatter(text)
         fm = fm or {}
         skill_dir = os.path.dirname(path)
         rel_dir = posix_rel(skill_dir, root)
         group = "kanban" if rel_dir.startswith("kanban/") else "core"
         readme_path = os.path.join(skill_dir, "README.md")
         readme = read_text(readme_path) if os.path.isfile(readme_path) else ""
-        entries.append(_entry(fm, os.path.basename(skill_dir), group, rel_dir, readme))
+        entries.append(_entry(fm, os.path.basename(skill_dir), group, rel_dir, readme, text))
     for path in lint.find_agent_files(root):
-        fm, body = lint.parse_frontmatter(read_text(path))
+        text = read_text(path)
+        fm, body = lint.parse_frontmatter(text)
         fm = fm or {}
         stem = os.path.splitext(os.path.basename(path))[0]
-        entries.append(_entry(fm, stem, "agents", posix_rel(path, root), body.strip("\n") + "\n"))
+        entries.append(_entry(fm, stem, "agents", posix_rel(path, root), body.strip("\n") + "\n", text))
     entries.sort(key=lambda e: (GROUPS.index(e["group"]), e["name"]))
     return entries
 
 
-def _entry(fm, fallback_name, group, source, readme):
+def _entry(fm, fallback_name, group, source, readme, text):
     description = fm.get("description") or ""
     if not isinstance(description, str):
         description = ""
@@ -82,7 +84,18 @@ def _entry(fm, fallback_name, group, source, readme):
         "group": group,
         "source": source,
         "readme": readme,
+        # Build-only extras (stripped from skills.json).
+        "_x": {"fm": fm, "fm_raw": _frontmatter_raw(text)},
     }
+
+
+def _frontmatter_raw(text):
+    m = re.match(r"^---\n(.*?)\n---", text, re.S)
+    return m.group(1) if m else ""
+
+
+def public(entries):
+    return [{k: v for k, v in e.items() if not k.startswith("_")} for e in entries]
 
 
 def counts(entries):
@@ -124,22 +137,15 @@ def embed_json(obj):
     return json.dumps(obj, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c")
 
 
+def nav_data(entries):
+    return embed_json([{"name": e["name"], "summary": e["summary"], "group": e["group"]} for e in entries])
+
+
 def render_index(template, entries):
-    data = [{"name": e["name"], "summary": e["summary"], "group": e["group"]} for e in entries]
     return (template
             .replace("{{COUNT}}", esc(count_line(entries)))
             .replace("{{LIST}}", render_list(entries))
-            .replace("{{DATA}}", embed_json(data)))
-
-
-def render_detail(template, e):
-    source_url = "%s/%s/%s" % (REPO_URL, "blob/master" if e["source"].endswith(".md") else "tree/master", e["source"])
-    return (template
-            .replace("{{NAME}}", esc(e["name"]))
-            .replace("{{GROUP}}", esc(e["group"]))
-            .replace("{{DESCRIPTION}}", esc(e["description"]))
-            .replace("{{SOURCE_URL}}", esc(source_url))
-            .replace("{{SOURCE}}", esc(e["source"])))
+            .replace("{{DATA}}", nav_data(entries)))
 
 
 def write(path, text):
@@ -160,12 +166,13 @@ def build(root, out):
     os.makedirs(out)
 
     write(os.path.join(out, "index.html"), render_index(read_text(os.path.join(src, "index.html")), entries))
-    detail_tpl = read_text(os.path.join(src, "detail.html"))
+    pages = site_detail.build_pages(root, entries, site_detail.load_meta(root),
+                                    read_text(os.path.join(src, "detail.html")), nav_data(entries))
     for e in entries:
-        write(os.path.join(out, e["name"], "index.html"), render_detail(detail_tpl, e))
+        write(os.path.join(out, e["name"], "index.html"), pages[e["name"]])
     write(os.path.join(out, "404.html"), read_text(os.path.join(src, "404.html")))
     write(os.path.join(out, "skills.json"),
-          json.dumps(entries, ensure_ascii=False, indent=2) + "\n")
+          json.dumps(public(entries), ensure_ascii=False, indent=2) + "\n")
     for fn in sorted(os.listdir(src)):
         if fn.endswith(STATIC_EXTS):
             write(os.path.join(out, fn), read_text(os.path.join(src, fn)))
