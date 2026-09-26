@@ -374,10 +374,7 @@ def fallback_check(seg, ctx):
         ctx.block("unparseable push command with a brace expansion.")
     words = re.findall(r"[\w./+-]+", seg)
     for w in words:
-        w2 = w.lstrip("+").split(":")[-1]
-        if w2.startswith("refs/heads/"):
-            w2 = w2[len("refs/heads/"):]
-        if ctx.is_protected(w2):
+        if ctx.is_protected(strip_ref(w.lstrip("+").split(":")[-1])):
             ctx.block("unparseable push command naming a protected branch.")
     if re.search(r"(^|\s)(--force|--mirror|--delete|-[A-Za-z]*[fd][A-Za-z]*\b|\+)", seg):
         ctx.block("unparseable push command with a force/delete marker.")
@@ -565,7 +562,17 @@ def check_git(args, ctx, subs, depth, alias_depth=0):
 
 
 def strip_ref(ref):
-    return ref[len("refs/heads/"):] if ref.startswith("refs/heads/") else ref
+    """Branch name git would resolve `ref` to: collapses `//` and `/./`,
+    drops `refs/heads/` and the DWIM `heads/` prefix."""
+    prev = None
+    while prev != ref:
+        prev = ref
+        ref = re.sub(r"/+", "/", ref).replace("/./", "/")
+        ref = re.sub(r"^\./", "", ref)
+    for p in ("refs/heads/", "heads/"):
+        if ref.lower().startswith(p):
+            return ref[len(p):]
+    return ref
 
 
 def is_current_branch_subst(tok, subs):
@@ -614,6 +621,8 @@ def check_push(args, ctx, subs, cwd):
         if ":" in spec and src == "":
             ctx.block("delete refspec '%s' is not allowed." % spec)
         dst = strip_ref(dst)
+        if "@{" in dst or dst == "-":
+            ctx.block("refspec '%s' resolves to another branch; spell the branch name out." % spec)
         if "*" in dst:
             ctx.block("wildcard refspec '%s' is not allowed." % spec)
         if ctx.is_protected(dst):
@@ -829,6 +838,14 @@ CASES = [
     ("git push origin krish/{docs}", A, "feat"),  # no comma: bash leaves it literal
     ("git push origin main^{}:krish/x", A, "feat"),
     ("git push origin 'ma{i,}n", B, "feat"),  # unparseable + brace
+    ("git push origin HEAD:heads/main", B, "feat"),
+    ("git push origin x:refs/heads//main", B, "feat"),
+    ("git push origin x:refs/./heads/./main", B, "feat"),
+    ("git push origin x:Refs/Heads/Main", B, "feat"),
+    ("git push origin @{-1}", B, "feat"),
+    ("git push origin HEAD@{0}:krish/x", A, "feat"),
+    ("git push origin HEAD:heads/krish/x", A, "feat"),
+    ("git push origin 'x:heads/main", B, "feat"),  # unparseable + DWIM
     ("gh pr merge 123", B, "feat"),
     ("gh pr merge --squash --auto 5", B, "feat"),
     ("gh -R o/r pr merge 5", B, "feat"),
