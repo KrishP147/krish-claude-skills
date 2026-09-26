@@ -1,0 +1,29 @@
+{
+  "levels_source": "usage in the author's sessions, Sep 2026",
+  "level_labels": {
+    "in-anger": "used in anger",
+    "lightly": "lightly used",
+    "untested": "untested",
+    "new": "new"
+  },
+  "levels": {
+    "in-anger": [
+      "planner", "implementer", "verifier", "manager", "meta-orchestrator",
+      "grilling", "handoff", "handoff-auto", "session-handoff", "next",
+      "update-progress"
+    ],
+    "lightly": [
+      "pair", "progress-report", "repo-scrub", "consult-plan", "divide",
+      "kanban-setup"
+    ],
+    "untested": ["grill-me", "grill-docs"]
+  },
+  "authors_note": "Default author is Krish. Third-party entries must match THIRD_PARTY_LICENSES.md.",
+  "default_author": "Krish",
+  "authors": {
+    "grilling": "Matt Pocock",
+    "grill-me": "Matt Pocock",
+    "handoff": "derived from Matt Pocock",
+    "handoff-auto": "derived from Matt Pocock"
+  }
+}
