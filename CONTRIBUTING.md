@@ -34,7 +34,11 @@ A skill submission is a directory containing:
 - **Generic and user-facing.** No project names, company names, or personal
   data — yours or anyone else's. `scripts/lint.py` runs a forbidden-word
   check; a skill that only makes sense inside one specific project doesn't
-  belong here.
+  belong here. The word list itself is never committed: put your own
+  words (one per line, `#` comments allowed) in an untracked repo-root
+  `.lint-forbidden.txt`, or set the comma-separated `SKILLS_LINT_FORBIDDEN`
+  env var — e.g. `SKILLS_LINT_FORBIDDEN=acme-internal,project-codename`.
+  With neither set, the check is silently skipped.
 - **License.** Contributions are made under this repo's MIT license (see
   [`LICENSE`](LICENSE)).
 - **Credit third-party work.** If your skill is copied or adapted from
@@ -56,7 +60,9 @@ python scripts/lint.py
 Fix anything it reports as a failure. It also prints `WARN:` lines (to
 stderr) for a skill README missing one of the required headings above —
 warnings don't fail the run, but fix them before submitting if they're
-about your own skill.
+about your own skill. To test the forbidden-word check locally, drop a
+throwaway word into `.lint-forbidden.txt` at the repo root (gitignored),
+confirm `python scripts/lint.py` fails naming it, then delete the file.
 
 Install into a throwaway location instead of your real `~/.claude/`, so you
 can check the result without touching your own setup:
