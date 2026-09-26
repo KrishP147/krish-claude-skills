@@ -12,15 +12,19 @@ disallowed-tools: Edit, Write, NotebookEdit
 gh project list --owner <owner> --format json
 ```
 
-This returns *every* project the owner has, not just ones tied to this repo — several returned is not automatic ambiguity. Filter to a title match (`"<repo> Board"`, matching `kanban-setup`'s naming) or to boards whose items link back to this repo. Exactly one match: use it. More than one: ask the user. None: check for a label-based pseudo-board (`status:todo`, `status:in-progress`, `status:done` labels). Neither exists: fall back to a **roadmap doc** (`ROADMAP.md`, `docs/roadmap.md`) whose ordering section ("Execution order" or similar) links issues — that ordering is the queue. Nothing at all: tell the user to run `kanban-setup` first.
+This returns *every* project the owner has, not just ones tied to this repo — several returned is not automatic ambiguity. Filter to a title match (`"<repo> Board"`, matching `kanban-setup`'s naming) or to boards whose items link back to this repo. Exactly one match: use it. More than one: ask the user. None: check for a label-based pseudo-board (`status:todo`, `status:in-progress`, `status:in-review`, `status:done` labels). Neither exists: fall back to a **roadmap doc** (`ROADMAP.md`, `docs/roadmap.md`) whose ordering section ("Execution order" or similar) links issues — that ordering is the queue. Nothing at all: tell the user to run `kanban-setup` first.
+
+**Label fallback, first use:** these labels aren't created by GitHub. Whichever skill is about to apply one for the first time runs `gh label create status:<name> --color <hex> --force` right before the edit, with a fixed color per label: `todo` EDEDED, `in-progress` FBCA04, `in-review` 5319E7, `done` 0E8A16. `--force` updates an existing label instead of failing; the fixed `--color` keeps repeat calls a no-op (without it `gh` picks a random color each time). Skills that apply a status label reference this note instead of repeating it.
 
 ## 2. Check for a burning priority first
 
 ```
-gh run list --branch <default-branch> --status failure --limit 1
+gh run list --branch <default-branch> --status completed --limit 1 --json conclusion,url
 ```
 
-A red default branch outranks everything else — surface it as priority #1 if found.
+Look at the single most recent **completed** run on the default branch — not "any failure in history"; an old failure the branch has since recovered from isn't a burning priority. Red only if `conclusion == "failure"`. Treat `cancelled`/`timed_out` as not-red (usually a manual stop or infra hiccup, not a broken branch) — worth mentioning in passing, but don't surface as priority #1. Several workflows run on the branch: check each one's latest completed run (`--workflow <name>`), since a green run of one can hide a red one of another. No completed runs yet (brand-new repo): skip this check.
+
+A red (`failure`) default branch outranks everything else — surface it as priority #1 if found.
 
 ## 3. Pull candidate tasks
 

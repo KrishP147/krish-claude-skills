@@ -37,7 +37,9 @@ Each tier builds on the one above: `pair` is one orchestrator loop without the b
 | [`pr-watch`](pr-watch/README.md) | Watches your open PRs until merged: pulls bot and human review threads (CodeRabbit, Copilot, maintainers), fixes valid ones via `pair`, replies to or resolves the rest with cited evidence, reports CI (fork `action_required` = needs maintainer approval, not failing). Every push, reply, resolve, and bot re-trigger is gated on an explicit yes. | `gh`; `pair`'s agents for the fix step |
 | [`session-bridge`](session-bridge/README.md) | Coordinates with another running Claude Code session or agent: finds it (`ListAgents`, or its transcript under `~/.claude/projects/`), takes a read-only snapshot, checks for file/branch/issue overlap and proposes a split, then sends a message only on explicit yes. A reply from another session is never treated as your approval. | none; `ListAgents`/`SendMessage` and `gh` used when available |
 | [`sitrep`](sitrep/README.md) | Live, conversational status check in 10 lines or fewer: what's running, git state, open PRs + CI, an asked-vs-done checklist, needs-you items, and a SAFE/NOT SAFE close verdict. Gated stop-and-handoff on explicit "close". Read-only otherwise. | `gh`; background-task tools if available (optional) |
+| [`gap-scan`](gap-scan/README.md) | Surveys one or more repos (sync, README/docs, recent commits, TODOs, tests, open issues, an optional visual pass for UI apps) and returns a ranked, evidence-cited list of gaps, bugs, and extensions as issue-ready items. Read-only: writes one report under `skilleddocs/gaps/`; creating issues needs an explicit yes. | `gh` |
 | [`repo-showcase`](repo-showcase/README.md) | Gets a repo's working tree ready to be seen: rewrites the README around outcome and demo, prunes stale docs, fixes claims the code has outdated, scans for secrets and private names, proposes GitHub metadata. Never touches history or visibility — hands off to `repo-scrub` for that. | `gh` (metadata step only) |
+| [`teammate-brief`](teammate-brief/README.md) | Writes a handoff document for a person joining or picking up a project: setup steps verified by running them, an env/keys table (names only, never values), numbered tasks with a "done when" each, an ownership map, and a don't-touch list. Saved to `skilleddocs/briefs/`; commits and pushes gated separately. | none |
 
 ### [`kanban/`](kanban/) — GitHub-Issues-as-kanban-board workflow
 
@@ -58,7 +60,7 @@ Needs `gh auth refresh -s project -s read:project` once (see [`kanban/README.md`
 |---|---|---|---|
 | [`planner`](agents/README.md#planner) ([def](agents/planner.md)) | opus | `next`, `divide` | no Edit/Write; proposes splits, never creates issues; returns a ≤40-line kickoff brief |
 | [`manager`](agents/README.md#manager) ([def](agents/manager.md)) | opus | `handoff-auto` | spawns its own `implementer`, reviews the diff and reruns tests itself, restarts a fresh implementer from `skilleddocs/HANDOFF.md` when one stalls (≤3 rounds); same `guard-git.py` hook as the implementer; never pushes |
-| [`implementer`](agents/README.md#implementer) ([def](agents/implementer.md)) | sonnet | `handoff-auto`, `session-handoff` | a `PreToolUse` hook ([`guard-git.py`](agents/hooks/guard-git.py)) blocks pushes to protected branches (`main`/`master`), force/`--mirror`/`--delete` pushes, bare `git push` while on a protected branch, `gh pr merge`, `gh repo delete` and deleting a protected branch; writes `skilleddocs/HANDOFF.md` when stuck or past the smart zone; ends with the handoff path |
+| [`implementer`](agents/README.md#implementer) ([def](agents/implementer.md)) | sonnet | `handoff-auto`, `session-handoff` | a `PreToolUse` hook ([`guard-git.py`](agents/hooks/guard-git.py)) blocks pushes to protected branches (`main`/`master`, incl. `HEAD:main`, `refs/heads/main`), force (`--force*`, `-f`, `+refspec`)/`--mirror`/`--delete` pushes, bare `git push` while on a protected branch, `gh pr merge`, `gh api` merges/protected-ref writes, `gh repo delete` and deleting a protected branch, also inside `bash -c`/`pwsh -Command`/`$(...)`; fails closed (exit 2) when no Python 3.8+ is found; a guardrail, not a sandbox, so pair it with GitHub branch protection; writes `skilleddocs/HANDOFF.md` when stuck or past the smart zone; ends with the handoff path |
 | [`verifier`](agents/README.md#verifier) ([def](agents/verifier.md)) | opus | `update-progress`, `consult-plan`, `next` | verifies against git log/tests/CI, reviews the diff, lists every question it answered on your behalf; no guard hook — may commit doc/board fixes to the default branch |
 
 Full explainer (inputs, outputs, procedure, guard hook): [`agents/README.md`](agents/README.md). They also work on their own: "use the planner agent to brief the next issue" is a fine prompt without the orchestrator. Set `GUARD_PROTECTED_BRANCHES=main,develop` to change what the hook protects. Agents can spawn agents (`manager` → `implementer`); only the built-in `fork` type can't nest.
@@ -119,7 +121,11 @@ cd skills
 .\scripts\install-skills.ps1       # Windows PowerShell
 ```
 
-This lints the repo, then copies every skill into `~/.claude/skills/<name>/` and every agent into `~/.claude/agents/` (personal, global: works in every repo, every terminal, no need to clone this repo inside your project). Re-running it is safe: each skill is replaced fresh; agents are copied over the existing files, and any `*.md` in `~/.claude/agents/` that is no longer in this repo is flagged ("stale agent(s) not in repo, remove manually: …"), never deleted, since it may be your own.
+This lints the repo, then copies every skill into `~/.claude/skills/<name>/` and every agent into `~/.claude/agents/` (personal, global: works in every repo, every terminal, no need to clone this repo inside your project). Re-running it is safe: each skill installed by this repo is replaced fresh (it's marked with a `.from-krishp147-skills` file dropped in its directory); agents are copied over the existing files, and any `*.md` in `~/.claude/agents/` that is no longer in this repo is flagged ("stale agent(s) not in repo, remove manually: …"), never deleted, since it may be your own.
+
+The lint step needs a real Python 3 on `PATH` (`python`, `python3`, or — on Windows — `py -3`; a Windows Store Python stub is detected and skipped). No working Python 3 is found → the install fails with a clear message; pass `--no-lint` (sh) / `-NoLint` (ps1) to proceed anyway, with a warning, and skip the lint step.
+
+If a directory with the same name as one of this repo's skills already exists under `~/.claude/skills/` but has no `.from-krishp147-skills` marker (i.e. you didn't get it from here), the install leaves it untouched, warns, and exits non-zero at the end so you notice. Pass `--force` (sh) / `-Force` (ps1) to replace it anyway. Upgrading from an install made before the marker existed? Every old skill dir looks foreign, so run once with `--force` / `-Force`.
 
 ## Update
 
@@ -162,7 +168,18 @@ gh auth refresh -s project -s read:project
 python scripts/lint.py
 ```
 
-Checks every `SKILL.md` and agent file (`agents/README.md` is docs, skipped by lint and install): frontmatter present, `name` matches the folder, description present and ≤1024 chars, no project-specific names leaking in, every skill an agent preloads exists and is model-invocable. The install scripts run this first and stop on failure. It also prints non-fatal `WARN:` lines (stderr) for a skill README missing a required section — see [`CONTRIBUTING.md`](CONTRIBUTING.md).
+Checks every `SKILL.md` and agent file (`agents/README.md` is docs, skipped by lint and install): frontmatter present, `name` matches the folder, description present and ≤1024 chars, every skill an agent preloads exists and is model-invocable. The install scripts run this first and stop on failure. It also prints non-fatal `WARN:` lines (stderr) for a skill README missing a required section — see [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+It also checks every tracked file in the repo for forbidden words, so nothing project-specific or personal leaks in. No word list ships in the repo (it would defeat the point). Configure your own locally:
+
+```bash
+# untracked repo-root file, one word per line, # comments allowed
+echo "acme-internal" > .lint-forbidden.txt
+# or a comma-separated env var
+SKILLS_LINT_FORBIDDEN=acme-internal,project-codename python scripts/lint.py
+```
+
+Neither set → the forbidden-word check is silently skipped.
 
 ## Contributing / grow this repo
 
@@ -170,7 +187,7 @@ Contributions welcome — new skills, fixes, better docs. See [`CONTRIBUTING.md`
 
 ## My `CLAUDE.md`
 
-[`dotfiles/CLAUDE.md`](dotfiles/CLAUDE.md) is my global Claude Code config, adapted from Matt Pocock's (commit-message style, GitHub CLI first, how I want plans formatted; the branch prefix is mine). Install it with:
+[`dotfiles/CLAUDE.md`](dotfiles/CLAUDE.md) is my global Claude Code config, adapted from Matt Pocock's (commit-message style, GitHub CLI first, how I want plans formatted). The branch prefix is left as a `<your-prefix>` placeholder in the tracked file. Install it with:
 
 ```bash
 ./scripts/setup-claude-md.sh merge     # append to your existing ~/.claude/CLAUDE.md
@@ -181,6 +198,8 @@ Contributions welcome — new skills, fixes, better docs. See [`CONTRIBUTING.md`
 ```
 
 `merge` just appends with a timestamped separator; it won't dedupe against your existing file, so skim the result afterward.
+
+Pass `--prefix <p>` (sh) / `-Prefix <p>` (ps1) to fill in the branch-prefix placeholder as it's written — e.g. the author's own value: `./scripts/setup-claude-md.sh merge --prefix krish` or `.\scripts\setup-claude-md.ps1 -Mode merge -Prefix krish`. Without it, `<your-prefix>` is left in place and the script prints a hint.
 
 ## Author
 
