@@ -53,3 +53,15 @@ Times: America/Toronto (EDT).
 - what: new skills sitrep, pr-watch, spend-gate (+ hooks/spend-guard.py tripwire). Mined from past sessions.
 - verified by: CI green on each PR (runs 36219081961, 36219242695, 36219406036); lint OK 18 skills 4 agents; spend-guard self-test 18/18 (manager)
 - decided for you: README table-row conflicts resolved by keeping both rows
+
+### 010 · 2026-09-26 01:55 EDT · verify
+- issue/PR: PR #28, #29, #30, #31
+- what: verifier: all claims match; sitrep updated (TaskOutput deprecated → read task output file); top README gained a site/ section; decisions.md created D1-D4.
+- verified by: master CI runs 36219424250, 36219722408 green; lint, spend-guard 18/18, unittest 9/9, node 8/8
+- decided for you: vercel.json at root (D1); Enter opens highlighted first match (D2); keep 404/--out/`/`-focus extras (D3); spend-guard inline prefix covers compound cmd (D4)
+
+### 011 · 2026-09-26 02:00 EDT · merge
+- issue/PR: #18 / PR #32, #10 / PR #33
+- what: repo-scrub hardening (rotate-first gate, parse fix, fingerprint-only findings, LFS first, dedupe, 12 tests, CI step); new skill repo-showcase.
+- verified by: CI runs 36219898973, 36220015034 green; repo-scrub unittest 12/12 local
+- decided for you: #18 squashed onto a fresh branch (deviation from merge-commit style) → branch history held a key-shaped fake fixture that push protection/scanners would flag
