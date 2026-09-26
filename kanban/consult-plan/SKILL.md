@@ -17,4 +17,4 @@ argument-hint: "the idea, deviation, or innovation to discuss"
    - Otherwise `skilleddocs/decisions.md` — append a row (`| D<k> | date | decision | why | source |`); create it with the register header from the `grill-docs` skill if missing.
    - Always also leave a comment on the relevant issue, or open a new issue if there isn't one yet.
 
-   If a new issue was created, add it to the kanban board's Todo column too (`gh project item-add` or `status:todo` label, matching whatever the repo already uses) — same as `divide` does for its sub-issues. An issue born from a plan discussion still belongs on the board; don't leave it to be picked up by a future backfill.
+   If a new issue was created, add it to the board too, same as `divide` does for its sub-issues: Projects v2 → `gh project item-add` then `gh project item-edit` to set Status=Todo (IDs per `session-handoff` §3 — `item-add` alone leaves Status empty); label fallback → `status:todo` (create first if missing — see `next` §1). Match whatever the repo already uses. An issue born from a plan discussion still belongs on the board; don't leave it to be picked up by a future backfill.
