@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
-"""Merge gitleaks JSON + git-filter-repo --analyze output + git-sizer JSON
-into one findings list with stable IDs (S1, S2... secrets / L1, L2... large blobs).
+"""Merge gitleaks JSON + git-filter-repo --analyze output into one findings
+list with stable IDs (S1, S2... secrets / L1, L2... large blobs).
 
 Usage:
     python summarize_findings.py \
         --gitleaks gitleaks-report.json \
         --analysis-dir .git/filter-repo/analysis \
-        --sizer sizer-report.json \
         --out findings.json \
         [--large-threshold-bytes 1000000]
 
-Writes findings.json and prints a human-readable table to stdout.
-Never prints raw secret values - only rule name, file, and line.
+Writes findings.json and prints a human-readable table to stdout. Secret
+findings are deduped by (RuleID, Secret) and never carry a raw secret value -
+only a sha256 fingerprint, rule, paths/lines, and commits. (git-sizer is not
+used; before/after repo size comes from `git count-objects -vH` instead.)
 """
 
 import argparse
+import hashlib
 import json
 import re
 import sys
@@ -22,32 +24,52 @@ from pathlib import Path
 
 
 def load_gitleaks(path: Path) -> list[dict]:
+    """Merge gitleaks JSON entries into one finding per unique (RuleID,
+    Secret) pair - the same leaked value showing up in several commits or
+    files is one secret, not N findings. Never keeps the raw secret value:
+    only its sha256 fingerprint, so it can be looked back up against the
+    gitleaks report (which build_replace_text.py reads separately) without
+    ever writing the value itself to findings.json.
+    """
     if not path.exists():
         return []
     with path.open(encoding="utf-8") as f:
         raw = json.load(f)
-    findings = []
+
+    grouped: dict[tuple, dict] = {}
+    order: list[tuple] = []
     for entry in raw:
-        findings.append(
-            {
+        secret = entry.get("Secret", "")
+        rule = entry.get("RuleID", "unknown-rule")
+        key = (rule, secret)
+        if key not in grouped:
+            grouped[key] = {
                 "type": "secret",
-                "path": entry.get("File", "unknown"),
-                "rule": entry.get("RuleID", "unknown-rule"),
-                "line": entry.get("StartLine"),
-                "commits": [entry.get("Commit")] if entry.get("Commit") else [],
-                # kept out of the table on purpose - only surfaced if the
-                # user explicitly asks for this finding's ID by name.
-                "_secret_value": entry.get("Secret", ""),
+                "rule": rule,
+                "secret_sha256": (
+                    hashlib.sha256(secret.encode("utf-8")).hexdigest()
+                    if secret
+                    else None
+                ),
+                "paths": [],
+                "commits": [],
             }
-        )
-    return findings
+            order.append(key)
+        g = grouped[key]
+        location = {"path": entry.get("File", "unknown"), "line": entry.get("StartLine")}
+        if location not in g["paths"]:
+            g["paths"].append(location)
+        commit = entry.get("Commit")
+        if commit and commit not in g["commits"]:
+            g["commits"].append(commit)
+
+    return [grouped[k] for k in order]
 
 
 def load_filter_repo_analysis(analysis_dir: Path, threshold_bytes: int) -> list[dict]:
     """Parse path-all-sizes.txt (or path-all-sizes-and-checkouts.txt) from
-    `git filter-repo --analyze` output. Format is whitespace-columned; the
-    exact column set has shifted across filter-repo versions, so this looks
-    for a size-like integer column and a trailing path column defensively.
+    `git filter-repo --analyze` output. Each row is
+    "  {unpacked:>10} {packed:>10} {<present>-or-date:<10} {path}".
     """
     candidates = [
         analysis_dir / "path-all-sizes.txt",
@@ -58,7 +80,12 @@ def load_filter_repo_analysis(analysis_dir: Path, threshold_bytes: int) -> list[
         return []
 
     findings = []
-    size_re = re.compile(r"^\s*([\d,]+)\s+([\d,]+)\s+(.+)$")
+    # Explicit date-or-<present> column so it can't be swallowed into the
+    # path group - the path is everything after that column, verbatim
+    # (it may itself contain spaces).
+    size_re = re.compile(
+        r"^\s*([\d,]+)\s+([\d,]+)\s+(?:<present>|\d{4}-\d{2}-\d{2})\s+(.+?)\s*$"
+    )
     with report.open(encoding="utf-8") as f:
         lines = f.readlines()
 
@@ -67,24 +94,19 @@ def load_filter_repo_analysis(analysis_dir: Path, threshold_bytes: int) -> list[
         if not m:
             continue
         max_size = int(m.group(1).replace(",", ""))
-        path = m.group(3).strip()
+        path = m.group(3)
         if max_size >= threshold_bytes:
             findings.append(
                 {
                     "type": "large",
                     "path": path,
-                    "size_bytes": max_size,
+                    # Cumulative size across every version of this path in
+                    # history, not one blob's size - filter-repo's column.
+                    "accumulated_bytes": max_size,
                     "commits": [],
                 }
             )
     return findings
-
-
-def load_sizer_overview(path: Path) -> dict:
-    if not path.exists():
-        return {}
-    with path.open(encoding="utf-8") as f:
-        return json.load(f)
 
 
 def human_size(n: int) -> str:
@@ -99,14 +121,12 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--gitleaks", type=Path, required=True)
     ap.add_argument("--analysis-dir", type=Path, required=True)
-    ap.add_argument("--sizer", type=Path, required=False)
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--large-threshold-bytes", type=int, default=1_000_000)
     args = ap.parse_args()
 
     secrets = load_gitleaks(args.gitleaks)
     large = load_filter_repo_analysis(args.analysis_dir, args.large_threshold_bytes)
-    sizer = load_sizer_overview(args.sizer) if args.sizer else {}
 
     findings = {}
     for i, s in enumerate(secrets, start=1):
@@ -116,26 +136,29 @@ def main() -> int:
 
     args.out.write_text(json.dumps(findings, indent=2), encoding="utf-8")
 
-    # human-readable table - never print _secret_value here
-    print(f"{'ID':<5}{'Type':<8}{'Path':<40}{'Detail':<30}Commits")
+    # human-readable table - never print secret values, only the fingerprint
+    print(f"{'ID':<5}{'Type':<8}{'Path(s)':<40}{'Detail (rule / accum. size, all versions)':<45}Commits")
     for fid, entry in findings.items():
         if entry["type"] == "secret":
             detail = entry["rule"]
+            locations = entry.get("paths", [])
+            path = locations[0]["path"] if locations else "unknown"
+            if len(locations) > 1:
+                path += f" (+{len(locations) - 1} more)"
         else:
-            detail = human_size(entry["size_bytes"])
+            detail = f"{human_size(entry['accumulated_bytes'])} accum. (all versions)"
+            path = entry["path"]
         commits = len(entry.get("commits", []))
-        path = entry["path"][:38]
-        print(f"{fid:<5}{entry['type']:<8}{path:<40}{detail:<30}{commits}")
+        path = path[:38]
+        print(f"{fid:<5}{entry['type']:<8}{path:<40}{detail:<45}{commits}")
 
     n_secrets = len(secrets)
     n_large = len(large)
-    total_large_bytes = sum(e["size_bytes"] for e in large)
+    total_large_bytes = sum(e["accumulated_bytes"] for e in large)
     print(
         f"\n{n_secrets} secret(s), {n_large} large blob(s) "
         f"totaling {human_size(total_large_bytes)}."
     )
-    if sizer:
-        print("git-sizer overview available in", args.sizer)
 
     return 0
 

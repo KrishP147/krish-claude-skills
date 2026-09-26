@@ -25,5 +25,7 @@ jobs:
         run: python3 scripts/build_site.py
       - name: Python tests
         run: python3 -m unittest discover -s scripts -p "test_*.py"
+      - name: repo-scrub tests
+        run: python3 -m unittest discover -s repo-scrub/scripts -p "test_*.py"
       - name: Node tests
         run: node --test site/test/filter.test.mjs
