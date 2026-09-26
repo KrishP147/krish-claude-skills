@@ -14,18 +14,17 @@ scopes to one. `--once`: one pass, then report and stop (no watch loop).
 ## 1. List open PRs
 
 ```
-gh search prs --author @me --state open --json number,title,url,repository,isDraft,headRefName
+gh search prs --author @me --state open --json number,title,url,repository,isDraft
 ```
+
+(`gh search prs` has no branch field; get `headRefName` per PR via `gh pr view`.)
 
 Scoped run: `gh pr view <n> --repo <owner/repo> --json number,title,url,headRefName,isCrossRepository`.
 Build a state table: repo, PR #, title, branch, draft?, fork (`isCrossRepository`)?
 
 ## 2. Per PR: pull review threads
 
-Unresolved (and resolved, for the log) review threads via GraphQL — verified
-by introspecting the live schema and running this exact query read-only
-against a real public PR (`cli/cli#14337`, returned a Copilot review
-comment):
+Unresolved (and resolved, for the log) review threads via GraphQL:
 
 ```
 gh api graphql -f query='
@@ -77,20 +76,22 @@ report; don't call it broken.
 ## 4. Fix the valid threads
 
 One `pair` call per PR (not per thread) with every **valid** thread's path/
-line/body as the task text, working in the PR's own branch/worktree. Let
-`pair` rerun the repo's tests. Do not fix **disagree** or **question**
+line/body as the task text, on the PR's existing head branch (not a new
+one). Tell `pair` the PR already exists: no new PR, no push — pushing stays
+with §5/§6 here. Let `pair` rerun the repo's tests. Do not fix **disagree** or **question**
 threads — those get a reply, not a diff.
 
-## 5. GATE — before any push
+## 5. GATE — before any push or reply
 
-Show: diff summary (files, one-line-per-file), commit list, test result.
-Ask explicitly before pushing. A force push needs `--force-with-lease` and
+Show: diff summary (files, one-line-per-file), commit list, test result,
+and the drafted reply for each thread. Ask explicitly before pushing and
+before posting replies (one yes may cover both if the user says so). A force push needs `--force-with-lease` and
 its own fresh yes even if push was already approved this session — never
 reuse an earlier approval for it.
 
 ## 6. Push, reply, resolve
 
-Push only after §5's yes. Then, per thread:
+Push and reply only after §5's yes. Then, per thread:
 
 - **Reply** with the commit SHA that addresses it (or, for disagree/question,
   the reasoning/answer):
@@ -104,8 +105,8 @@ Push only after §5's yes. Then, per thread:
   }' -F id=<threadId> -F body="Fixed in <sha>: <one line>"
   ```
 
-  (Field confirmed by schema introspection: `AddPullRequestReviewThreadReplyInput`
-  takes `pullRequestReviewThreadId` + `body`, not `id`.)
+  (`AddPullRequestReviewThreadReplyInput` takes `pullRequestReviewThreadId`
+  + `body`, not `id`.)
 
 - **GATE**, then **resolve** — only threads you just fixed, or proved
   outdated by reading the current diff. Say which threads and why before
@@ -121,7 +122,7 @@ Push only after §5's yes. Then, per thread:
   ```
 
   Anyone who opened the PR, or has write access to the repo it was opened
-  in, can resolve — confirmed from GitHub's docs ("You can resolve a
+  in, can resolve (GitHub docs: "You can resolve a
   conversation in a pull request if you opened the pull request or if you
   have write access to the repository where the pull request was opened").
   On a fork PR you almost always qualify as the opener; don't assume it

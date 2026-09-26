@@ -11,7 +11,7 @@ Watches your open pull requests (your own repo, or a fork against its upstream) 
 - "Watch my PRs", "check on my open PRs".
 - "Address the review comments", "handle the CodeRabbit/Copilot feedback".
 - "Drive this PR to merge".
-- Not for opening or reviewing PRs from scratch — see [`pair`](../pair/) and [`code-review`](../README.md) for those.
+- Not for opening or reviewing PRs from scratch — use [`pair`](../pair/) or a code-review tool for those.
 
 ## How to invoke
 
@@ -29,7 +29,7 @@ Model-invocable, so "watch my PRs until they're merged" also works without the s
 2. **Pull review threads** per PR with a GraphQL `reviewThreads` query (paginated), classifying each unresolved one as valid / outdated / disagree / question, citing its thread URL.
 3. **Read CI** (`gh pr checks`); a fork PR stuck at `action_required` is reported as waiting on maintainer approval, not as failing.
 4. **Fix** the valid threads through [`pair`](../pair/) (one call per PR, every valid thread's path/line/body as the task), which reruns the tests.
-5. **GATE** — shows the diff summary and asks before pushing; a force push needs its own fresh yes even if the push itself was already approved.
+5. **GATE** — shows the diff summary and drafted replies and asks before pushing or replying; a force push needs its own fresh yes even if the push itself was already approved.
 6. **Push, then reply and resolve**: replies to every thread with the fixing commit's SHA (or, for disagree/question threads, the reasoning); resolves only threads it just fixed or proved outdated by reading the current diff, and only after another explicit yes — never a disagree/question thread, which gets a reply and stays open.
 7. **Optional bot re-trigger** (`@coderabbitai review`) only on a fresh yes; notes that bots frequently never run on fork PRs at all.
 8. **Watches** (`Monitor` or a bounded poll, never a blind sleep) until merged/closed/stopped, re-reading threads and CI every pass.
