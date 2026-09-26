@@ -163,6 +163,12 @@ class SectionMappingTest(unittest.TestCase):
         self.assertEqual(extras, [("Odd one", "odd")])
         self.assertIn("## not a heading", ordered[1][2])  # fenced '##' is not a split
 
+    def test_placeholders_in_readme_stay_literal(self):
+        e = dict(build_site.collect(ROOT)[0], readme="## What it does\n\nUse `{{NAME}}` and {{DATA}}.\n")
+        pages = site_detail.build_pages(ROOT, [e], {}, "{{BODY}}|{{NAME}}", "[]")
+        self.assertIn("<code>{{NAME}}</code> and {{DATA}}", pages[e["name"]])
+        self.assertTrue(pages[e["name"]].endswith("|" + e["name"]))
+
     def test_label_bullets(self):
         rest, pairs = site_detail.split_label_bullets(
             "- **Role:** does x.\n- **How it works:**\n  1. a\n  2. b\nTrailing.")

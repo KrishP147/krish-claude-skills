@@ -367,15 +367,19 @@ def build_pages(root, entries, meta, template, data_json):
         prev_e = entries[i - 1] if i > 0 else None
         next_e = entries[i + 1] if i + 1 < len(entries) else None
         url = "%s/%s" % (SITE_URL, e["name"])
-        pages[e["name"]] = (template
-                            .replace("{{CHIPS}}", chip_html)
-                            .replace("{{BODY}}", "\n".join(body))
-                            .replace("{{PREVNEXT}}", _prevnext(prev_e, next_e))
-                            .replace("{{DATA}}", data_json)
-                            .replace("{{URL}}", esc(url))
-                            .replace("{{NAME}}", esc(e["name"]))
-                            .replace("{{GROUP}}", esc(e["group"]))
-                            .replace("{{DESCRIPTION}}", esc(e["description"])))
+        # Single pass, so README text containing "{{NAME}}" etc. stays literal.
+        values = {
+            "CHIPS": chip_html,
+            "BODY": "\n".join(body),
+            "PREVNEXT": _prevnext(prev_e, next_e),
+            "DATA": data_json,
+            "URL": esc(url),
+            "NAME": esc(e["name"]),
+            "GROUP": esc(e["group"]),
+            "DESCRIPTION": esc(e["description"]),
+        }
+        pages[e["name"]] = re.sub(r"\{\{([A-Z]+)\}\}",
+                                  lambda m: values.get(m.group(1), m.group(0)), template)
     assert len(pages) == len(names)
     return pages
 
