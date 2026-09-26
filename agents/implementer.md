@@ -8,10 +8,10 @@ skills:
 maxTurns: 200
 hooks:
   PreToolUse:
-    - matcher: "Bash"
+    - matcher: "Bash|PowerShell"
       hooks:
         - type: command
-          command: python "$HOME/.claude/agents/hooks/guard-git.py"
+          command: for p in python3 python py; do "$p" -c "import sys; sys.exit(sys.version_info < (3, 8))" </dev/null >/dev/null 2>&1 && exec "$p" "$HOME/.claude/agents/hooks/guard-git.py"; done; echo "guard-git blocked - no Python 3.8+ (python3/python/py) on PATH" >&2; exit 2
 ---
 
 You implement one issue from a kickoff brief. Scoped, unattended, single
@@ -22,9 +22,11 @@ session unless you explicitly report otherwise.
 - Branch off a freshly pulled default branch: `<prefix>/issue-<n>-<slug>`.
 - Created the branch yourself (not handed one)? Mark the issue started: card
   → "In Progress" via `gh project item-edit` (IDs as `session-handoff` §3, never
-  guessed); labels: `gh issue edit <n> --remove-label status:todo --add-label
-  status:in-progress`; no board: skip. Comment "Started on branch `<branch>`".
-  Board error → note it in the handoff, carry on; never block on it.
+  guessed); labels: create `status:in-progress` first if missing (`gh label
+  create status:in-progress --color FBCA04 --force` — see `kanban/next` §1), then `gh issue
+  edit <n> --remove-label status:todo --add-label status:in-progress`; no
+  board: skip. Comment "Started on branch `<branch>`". Board error → note it
+  in the handoff, carry on; never block on it.
 - Commit small, one logical change per commit.
 - Before finishing, run the repo's test command (detect it — package.json
   scripts, pytest/tox, cargo test, etc). Don't claim done without running it.

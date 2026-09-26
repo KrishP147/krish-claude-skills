@@ -1,11 +1,18 @@
 #!/usr/bin/env python3
-"""Lints SKILL.md and agents/*.md files in this repo. Stdlib only.
+"""Lints SKILL.md and agents/*.md files in this repo, plus a repo-wide
+forbidden-word check over every tracked text file. Stdlib only.
 
 Checks: frontmatter present; name matches parent dir (skills) or file stem
-(agents); description present and <=1024 chars; body non-empty; no
-"praxic" (case-insensitive) anywhere in a linted file; every skill an
-agent preloads exists as a skill dir in the repo; no agent preloads a
-skill marked disable-model-invocation: true.
+(agents); description present and <=1024 chars; body non-empty; every skill
+an agent preloads exists as a skill dir in the repo; no agent preloads a
+skill marked disable-model-invocation: true; no configured forbidden word
+(case-insensitive) appears in any tracked file in the repo.
+
+Forbidden words are never hard-coded here (this file is public). Configure
+them locally via an untracked repo-root file `.lint-forbidden.txt` (one
+word per line; `#` comments and blank lines ignored) and/or the
+comma-separated env var SKILLS_LINT_FORBIDDEN. If neither yields any
+words, the forbidden-word check is silently skipped. See CONTRIBUTING.md.
 
 Also warns (to stderr, non-fatal) when a skill's README.md is missing one
 of the required "## " section headings from templates/skill/README.md.
@@ -17,9 +24,11 @@ with one line per failure otherwise. WARN lines never affect exit code.
 """
 import glob
 import os
+import subprocess
 import sys
 
 SKIP_DIRS = {".git", "node_modules", "templates"}
+FORBIDDEN_WORDS_FILE = ".lint-forbidden.txt"
 
 REQUIRED_README_SECTIONS = [
     "What it does",
@@ -102,7 +111,7 @@ def parse_frontmatter(text):
     return data, body
 
 
-def lint_common(path, text, fm, body, expected_name, failures):
+def lint_common(path, fm, body, expected_name, failures):
     if fm is None:
         failures.append("%s: missing frontmatter" % path)
         return
@@ -121,8 +130,72 @@ def lint_common(path, text, fm, body, expected_name, failures):
     if not body.strip():
         failures.append("%s: empty body" % path)
 
-    if "praxic" in text.lower():
-        failures.append("%s: contains forbidden word 'praxic'" % path)
+
+def load_forbidden_words(root):
+    """Forbidden words from the untracked .lint-forbidden.txt (one per
+    line, '#' comments and blank lines ignored) plus the comma-separated
+    SKILLS_LINT_FORBIDDEN env var. All compared case-insensitively."""
+    words = set()
+    words_path = os.path.join(root, FORBIDDEN_WORDS_FILE)
+    if os.path.isfile(words_path):
+        with open(words_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.split("#", 1)[0].strip()
+                if line:
+                    words.add(line.lower())
+    for word in os.environ.get("SKILLS_LINT_FORBIDDEN", "").split(","):
+        word = word.strip()
+        if word:
+            words.add(word.lower())
+    return words
+
+
+def list_tracked_files(root):
+    """Paths git tracks, or None if git isn't available/this isn't a repo."""
+    try:
+        out = subprocess.check_output(
+            ["git", "ls-files"], cwd=root, stderr=subprocess.DEVNULL
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return [
+        os.path.join(root, rel)
+        for rel in out.decode("utf-8", "replace").splitlines()
+        if rel
+    ]
+
+
+def walk_all_files(root):
+    found = []
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [d for d in dirnames if d not in (".git", "node_modules")]
+        for name in filenames:
+            found.append(os.path.join(dirpath, name))
+    return found
+
+
+def check_forbidden_words(root, failures):
+    words = load_forbidden_words(root)
+    if not words:
+        return
+    files = list_tracked_files(root)
+    if files is None:
+        files = walk_all_files(root)
+    for path in sorted(files):
+        if not os.path.isfile(path):
+            continue
+        if os.path.basename(path) == FORBIDDEN_WORDS_FILE:
+            continue
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                text = f.read()
+        except (UnicodeDecodeError, OSError):
+            continue
+        lowered = text.lower()
+        rel = os.path.relpath(path, root)
+        for word in sorted(words):
+            if word in lowered:
+                failures.append("%s: contains forbidden word '%s'" % (rel, word))
 
 
 def readme_headings(text):
@@ -156,6 +229,8 @@ def main():
     root = repo_root()
     failures = []
 
+    check_forbidden_words(root, failures)
+
     skill_files = find_skill_files(root)
     agent_files = find_agent_files(root)
 
@@ -168,7 +243,7 @@ def main():
         fm, body = parse_frontmatter(text)
         parent_dir = os.path.basename(os.path.dirname(path))
         skill_names.add(parent_dir)
-        lint_common(path, text, fm, body, parent_dir, failures)
+        lint_common(path, fm, body, parent_dir, failures)
         if fm and str(fm.get("disable-model-invocation", "")).strip().lower() == "true":
             disabled_skills.add(parent_dir)
         warn_missing_readme_sections(path)
@@ -179,7 +254,7 @@ def main():
             text = f.read()
         fm, body = parse_frontmatter(text)
         stem = os.path.splitext(os.path.basename(path))[0]
-        lint_common(path, text, fm, body, stem, failures)
+        lint_common(path, fm, body, stem, failures)
         if fm:
             skills_list = fm.get("skills")
             if isinstance(skills_list, list):
