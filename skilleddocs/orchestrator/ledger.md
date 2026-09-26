@@ -77,3 +77,10 @@ Times: America/Toronto (EDT).
 - issue/PR: none
 - what: handoff budget (10) passed at 11 merges because loops ran in parallel; finishing in-flight #2, #19/#20, #11, #12, no new starts, then orchestrator handoff.
 - verified by: not verified: decision
+
+### 014 · 2026-09-26 02:55 EDT · merge
+- issue/PR: #19, #20 / PR #37; #11 / PR #38; #12 / PR #39; #2 / PR #40
+- what: install+privacy (forbidden words moved to untracked local list, prefix placeholder, installers fail w/o python unless --no-lint, marker + --force); new skills teammate-brief, session-bridge; site detail pages (stdlib md renderer, author/invocation/tested chips).
+- verified by: CI green (runs 36220686191, 36220734506, 36220834546); private name absent from tree (git grep); lint OK 22 skills 4 agents; site 47 py + 8 node tests (manager); /pair page screenshot reviewed
+- decided for you: no history scrub for the private codename in old lint.py commits → blocklist entry, not a secret; scrub needs force-push (left as question)
+- manual step for user: first reinstall after pull needs `-Force`/`--force` (installed skills predate markers)
