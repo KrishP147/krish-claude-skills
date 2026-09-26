@@ -1,0 +1,174 @@
+"""Tests for detail pages (scripts/site_detail.py via build_site.build).
+Run: python -m unittest discover -s scripts -p "test_*.py" """
+import os
+import re
+import shutil
+import sys
+import tempfile
+import unittest
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import build_site  # noqa: E402
+import lint  # noqa: E402
+import site_detail  # noqa: E402
+
+ROOT = lint.repo_root()
+
+
+class DetailPagesTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.out = tempfile.mkdtemp(prefix="site-detail-")
+        cls.entries = build_site.build(ROOT, cls.out)
+        cls.by = {e["name"]: e for e in cls.entries}
+        cls.pages = {}
+        for e in cls.entries:
+            with open(os.path.join(cls.out, e["name"], "index.html"), encoding="utf-8") as f:
+                cls.pages[e["name"]] = f.read()
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.out, ignore_errors=True)
+
+    def test_every_page_has_description_and_meta(self):
+        for e in self.entries:
+            page = self.pages[e["name"]]
+            desc = build_site.esc(e["description"])
+            self.assertIn('<p class="detail-desc">%s</p>' % desc, page, e["name"])
+            self.assertIn('<meta name="description" content="%s">' % desc, page)
+            self.assertIn("<title>/%s · " % e["name"], page)
+            self.assertIn('<meta property="og:url" content="https://skills.krishpunjabi.com/%s">'
+                          % e["name"], page)
+            for prop in ("og:title", "og:description", "og:type"):
+                self.assertIn('property="%s"' % prop, page)
+            self.assertIn('<section id="comments"', page)
+            self.assertIn("&gt;</span> /%s</p>" % e["name"], page)  # echoed command
+            self.assertIn('id="cmd"', page)  # sticky slash input
+            self.assertNotIn("{{", page)
+
+    def test_links_rewritten(self):
+        href = re.compile(r'href="([^"]*)"')
+        for name, page in self.pages.items():
+            for h in href.findall(page):
+                self.assertTrue(h.startswith(("/", "#", "https://", "http://", "mailto:")), (name, h))
+                if h.endswith(".md") or ".md#" in h:
+                    self.assertTrue(h.startswith("https://github.com/"), (name, h))
+        pair = self.pages["pair"]
+        self.assertIn('<a href="/meta-orchestrator">', pair)  # ../meta-orchestrator/
+        self.assertIn('<a href="/manager">', pair)  # ../agents/README.md#manager
+        self.assertIn("https://github.com/KrishP147/skills/blob/master/pair/SKILL.md", pair)
+
+    def test_no_script_from_markdown(self):
+        for name, page in self.pages.items():
+            self.assertEqual(page.count("<script"), 3, name)  # data + filter.js + app.js
+
+    def test_sections_ordered_none_empty(self):
+        titles = [t for _k, t in site_detail.SECTIONS] + ["Source"]
+        h2 = re.compile(r'<h2 id="[^"]*">(.*?)</h2>')
+        for name, page in self.pages.items():
+            found = h2.findall(page)
+            mapped = [t for t in found if t in titles]
+            self.assertEqual(mapped, sorted(mapped, key=titles.index), name)
+            self.assertEqual(found[-1], "Source", name)
+            self.assertNotRegex(page, r"</h2>\s*</section>", name)
+        for name, e in self.by.items():
+            if e["group"] != "agents" and "## Tips" not in e["readme"]:
+                self.assertNotIn(">Tips</h2>", self.pages[name], name)
+
+    def test_chips(self):
+        grill_me = self.pages["grill-me"]
+        self.assertIn("Matt Pocock", grill_me)
+        self.assertIn("user only", grill_me)
+        self.assertIn("derived from Matt Pocock", self.pages["handoff-auto"])
+        self.assertIn("model + user", self.pages["pair"])
+        self.assertIn("lightly used", self.pages["pair"])
+        planner = self.pages["planner"]
+        self.assertIn('<span class="k">model</span> opus', planner)
+        self.assertIn("/next, /divide", planner)
+        self.assertIn("all except Edit, Write, NotebookEdit", planner)
+        self.assertIn("used in anger", planner)
+
+    def test_agent_page_from_readme_section(self):
+        mgr = self.pages["manager"]
+        self.assertIn("Owns one task end to end", mgr)
+        self.assertIn("Agent(subagent_type=&quot;manager&quot;", mgr)
+        self.assertIn('Linked from: <a href="/pair">', mgr)  # backlink from pair's README
+        self.assertIn('Preloads: <a href="/handoff-auto">', mgr)
+        self.assertIn("https://github.com/KrishP147/skills/blob/master/agents/manager.md", mgr)
+        self.assertNotIn("Verifies an implementation session", mgr.split("detail-desc")[1].split("</p>", 1)[1])
+
+    def test_prev_next_build_order(self):
+        names = [e["name"] for e in self.entries]
+        for i, n in enumerate(names):
+            page = self.pages[n]
+            if i:
+                self.assertIn('href="/%s" rel="prev"' % names[i - 1], page)
+            else:
+                self.assertNotIn('rel="prev"', page)
+            if i + 1 < len(names):
+                self.assertIn('href="/%s" rel="next"' % names[i + 1], page)
+            else:
+                self.assertNotIn('rel="next"', page)
+
+    def test_deterministic(self):
+        out2 = tempfile.mkdtemp(prefix="site-detail2-")
+        try:
+            build_site.build(ROOT, out2)
+            for name, page in self.pages.items():
+                with open(os.path.join(out2, name, "index.html"), encoding="utf-8") as f:
+                    self.assertEqual(f.read(), page, name)
+        finally:
+            shutil.rmtree(out2, ignore_errors=True)
+
+
+class MetaTest(unittest.TestCase):
+    def test_authors_match_third_party_licenses(self):
+        meta = site_detail.load_meta(ROOT)
+        credited = site_detail.credited_third_party(ROOT)
+        names = {e["name"] for e in build_site.collect(ROOT)}
+        third_party = {n for n, a in meta["authors"].items() if a != meta["default_author"]}
+        self.assertEqual(third_party, credited & names)
+
+    def test_levels(self):
+        meta = site_detail.load_meta(ROOT)
+        seen = [n for ns in meta["levels"].values() for n in ns]
+        self.assertEqual(len(seen), len(set(seen)))
+        self.assertEqual(site_detail.level_of(meta, "does-not-exist"), "new")
+        self.assertEqual(site_detail.level_of(meta, "planner"), "in-anger")
+        self.assertEqual(meta["levels_source"], "usage in the author's sessions, Sep 2026")
+
+
+class SectionMappingTest(unittest.TestCase):
+    def test_tolerant_headings(self):
+        k = site_detail.section_key
+        self.assertEqual(k("What it does"), "what")
+        self.assertEqual(k("Invoke"), "invoke")
+        self.assertEqual(k("How to invoke it"), "invoke")
+        self.assertEqual(k("Prerequisite: the `project` OAuth scope"), "prereqs")
+        self.assertEqual(k("Examples"), "example")
+        self.assertEqual(k("Tips & gotchas"), "tips")
+        self.assertEqual(k("How it works"), "how")
+        self.assertIsNone(k("You get back (40 lines)"))
+
+    def test_organise_drops_missing_and_orders(self):
+        md = ("# x\n\n*`SKILL.md` is the prompt Claude follows; this file is for you.*\n\n"
+              "## Example\nex\n## Odd one\nodd\n## What it does\nw\n## Tips\n\n"
+              "## How it works\n```\n## not a heading\n```\n")
+        pre, pairs = site_detail.split_h2(md)
+        self.assertEqual(pre, "")
+        ordered, extras = site_detail.organise(pre, pairs)
+        self.assertEqual([t for _k, t, _b in ordered], ["What it does", "How it works", "Example"])
+        self.assertEqual(extras, [("Odd one", "odd")])
+        self.assertIn("## not a heading", ordered[1][2])  # fenced '##' is not a split
+
+    def test_label_bullets(self):
+        rest, pairs = site_detail.split_label_bullets(
+            "- **Role:** does x.\n- **How it works:**\n  1. a\n  2. b\nTrailing.")
+        self.assertEqual(pairs[0], ("Role", "Does x."))
+        self.assertEqual(pairs[1][0], "How it works")
+        self.assertIn("1. a\n2. b", pairs[1][1])
+        self.assertEqual(rest, "Trailing.")
+
+
+if __name__ == "__main__":
+    unittest.main()
