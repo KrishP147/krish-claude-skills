@@ -1,0 +1,69 @@
+# repo-showcase
+
+*`SKILL.md` is the prompt Claude follows; this file is for you.*
+
+## What it does
+
+Gets a repo's working tree ready to be seen: rewrites the README around outcome and demo, prunes stale or internal-only docs, fixes claims the code has quietly outdated, scans for secrets and private names, and proposes GitHub metadata (description, topics, homepage). It never touches git history or repo visibility — it ends by handing off to [`repo-scrub`](../repo-scrub/README.md) for that.
+
+## When to use
+
+- "Make this repo public-facing", "showcase this repo".
+- "Polish the README for public", "get this ready to open-source".
+- "Prep this repo for a portfolio/public link".
+- Not for the history scan or the private → public flip — that's [`repo-scrub`](../repo-scrub/README.md), invoked separately once this skill's work is committed.
+
+## How to invoke
+
+```
+/repo-showcase [owner/repo]
+```
+
+Defaults to the current repo. Model-invocable, so any of the trigger phrases above work without the slash.
+
+## How it works
+
+1. **Ask up front, one batch** — outcome, audience, what to emphasize, each with a recommended default; proceeds on the answers or the defaults.
+2. **Inventory docs** — every doc in the repo into a keep / merge / delete table with a reason per row; nothing deleted or merged without an explicit yes.
+3. **Grep claims against reality** — every factual claim in the README/docs checked against the actual code, config, and `git log`; contradictions reported as `file:line` (claim) plus `file:line`/commit (evidence).
+4. **Rewrite the README, lean by default** — one-line pitch, result, demo media placeholder(s) the user fills in themselves (never a fabricated screenshot/GIF/metric), quickstart verified against step 3's findings, architecture only if the audience needs it, credits.
+5. **Scan for secrets and private names** — working tree only; emails and non-author full names in docs/comments/config, reported as `file:line`, redacted only on yes.
+6. **Propose GitHub metadata** — description/topics/homepage, shown as the exact `gh repo edit` command, applied only on yes.
+7. **GATE** — shows the diff summary; commits (small, one logical change each) only on yes, on a branch; pushes only on a separate yes.
+8. **Hands off to `repo-scrub`** — states plainly that history scanning and the visibility flip happen there, not here.
+9. **Writes the report** — the doc inventory, contradicted-claims list, and secret/name findings (plus what was done about each) to `skilleddocs/showcase/<local-date>.md`.
+
+## Design principles
+
+- **Never touches visibility or history.** Those are irreversible-ish and belong to a dedicated, more careful skill (`repo-scrub`); this one only prepares the working tree.
+- **Nothing invented.** Demo media, metrics, and architecture diagrams are placeholders for the user to fill in — never fabricated to make the README look more finished than the repo is.
+- **Every outward action gated.** Deletes, redactions, metadata edits, commits, and pushes each need an explicit yes; a diff is always shown first.
+
+## Use cases
+
+- Open-sourcing an internal tool: clean the README and docs before anyone outside the team sees them.
+- A portfolio repo whose README has drifted from what the code actually does.
+- Before running `repo-scrub`, so the history scan and visibility flip start from an already-honest working tree.
+
+## Tips
+
+- Answer the §1 questions yourself if you don't have strong opinions — the recommended defaults are reasonable starting points, not filler.
+- The contradicted-claims grep (§3) is worth running even if you're not ready to rewrite the README yet — it surfaces drift on its own.
+- Run this before `repo-scrub`, not after — a clean working tree makes the history scan's findings easier to read.
+
+## Example
+
+```
+/repo-showcase myorg/tool
+```
+
+Asks outcome/audience/emphasis, gets "go" (defaults accepted); inventories 6 docs (keeps 4, merges 1, deletes 1 stale plan doc on yes); finds the README claiming "Python 3.8+" against `pyproject.toml`'s `>=3.11`; rewrites the README with a pitch, a screenshot placeholder, and a corrected quickstart; finds no secrets but one teammate's email in a config comment, redacted on yes; proposes a description and two topics, applied on yes; shows the diff, commits on a branch on yes, pushes on a second yes; writes `skilleddocs/showcase/2026-09-26.md`; ends by pointing at `/repo-scrub` for the history scan and visibility flip.
+
+## Related
+
+- [`repo-scrub`](../repo-scrub/README.md) — the next step: full git-history scan and the private → public flip. This skill never does either.
+- `gap-scan` and `teammate-brief` are related ideas, not yet merged into this repo.
+
+## Prereqs
+
+`gh` for the metadata proposal step (§6). None otherwise.
