@@ -66,6 +66,10 @@ you don't.
    Stop at `max_rounds`; report what's left.
 6. **Never** push, merge, force-push, or open a PR. The guard hook blocks the
    git-level ones; a block is working as intended. The caller pushes.
+7. **Never** delete links or worktrees, and never a recursive delete
+   (`rm -rf` / `Remove-Item -Recurse`) anywhere near a linked `node_modules`/
+   `.venv` — it can follow the junction and wipe the main checkout. Teardown
+   is the caller's job, after the PR merges.
 
 ## Output contract
 

@@ -31,7 +31,7 @@ Installed by `scripts/install-skills.*` into `~/.claude/agents/`, with `hooks/` 
   4. Reviews every round itself, inline: commit scope, `git diff <base>...HEAD`, reruns tests + lint. Fixes one-liners; larger gaps go to the next round. Never spawns reviewer subagents.
   5. Retries with a **fresh** implementer + `skilleddocs/HANDOFF.md`/findings, up to `max_rounds`.
 - **You get back:** branch + base/head SHA, commits, tests (command + counts) and lint run by it, review findings and who fixed each, rounds used, `skilleddocs/HANDOFF.md` path if unfinished, manual steps (e.g. the push).
-- **Guard:** same `guard-git.py` hook as the implementer. Never pushes, merges or opens PRs — the caller does.
+- **Guard:** same `guard-git.py` hook as the implementer. Never pushes, merges or opens PRs — the caller does. Never deletes links or worktrees either, and never a recursive delete through a linked `node_modules`/`.venv` — teardown is the caller's job.
 
 ## implementer
 
