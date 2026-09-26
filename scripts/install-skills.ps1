@@ -12,8 +12,13 @@ $pyCmd = Get-Command python -ErrorAction SilentlyContinue
 if (-not $pyCmd) { $pyCmd = Get-Command python3 -ErrorAction SilentlyContinue }
 
 if ($pyCmd) {
+    # lint WARN lines go to stderr; under "Stop", PS 5.1 turns redirected
+    # native stderr into a terminating error, so relax it for this call.
+    $ErrorActionPreference = "Continue"
     & $pyCmd.Source (Join-Path $repoRoot "scripts\lint.py")
-    if ($LASTEXITCODE -ne 0) {
+    $lintExit = $LASTEXITCODE
+    $ErrorActionPreference = "Stop"
+    if ($lintExit -ne 0) {
         Write-Error "lint failed - aborting install"
         exit 1
     }
@@ -24,8 +29,11 @@ if ($pyCmd) {
 New-Item -ItemType Directory -Force -Path $target | Out-Null
 New-Item -ItemType Directory -Force -Path $agentsTarget | Out-Null
 
+$templatesPath = Join-Path $repoRoot "templates"
 $installed = @()
-Get-ChildItem -Path $repoRoot -Recurse -Filter "SKILL.md" -Depth 2 | ForEach-Object {
+Get-ChildItem -Path $repoRoot -Recurse -Filter "SKILL.md" -Depth 2 | Where-Object {
+    -not $_.FullName.StartsWith($templatesPath + [System.IO.Path]::DirectorySeparatorChar)
+} | ForEach-Object {
     $skillDir = $_.Directory
     $name = $skillDir.Name
     $dest = Join-Path $target $name

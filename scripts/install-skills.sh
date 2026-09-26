@@ -38,7 +38,7 @@ while IFS= read -r -d '' skill_md; do
   rm -rf "$dest"
   cp -r "$skill_dir" "$dest"
   installed+=("$name")
-done < <(find "$repo_root" -mindepth 2 -maxdepth 3 -name "SKILL.md" -print0)
+done < <(find "$repo_root" -mindepth 2 -maxdepth 3 -name "SKILL.md" -not -path "$repo_root/templates/*" -print0)
 
 installed_agents=()
 while IFS= read -r -d '' agent_md; do
