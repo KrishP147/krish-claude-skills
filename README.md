@@ -24,7 +24,7 @@ Each tier builds on the one above: `pair` is one orchestrator loop without the b
 
 | Skill | What it does | Prereqs |
 |---|---|---|
-| [`repo-scrub`](repo-scrub/README.md) | Scans a GitHub repo's full git history for secrets and oversized files, lets you pick exactly what to scrub, rewrites history safely, and only then flips the repo private → public. User-invoked only (`/repo-scrub`). | `gh`, [`gitleaks`](https://github.com/gitleaks/gitleaks), [`git-filter-repo`](https://github.com/newren/git-filter-repo), [`git-sizer`](https://github.com/github/git-sizer) |
+| [`repo-scrub`](repo-scrub/README.md) | Scans a GitHub repo's full git history for secrets and oversized files, lets you pick exactly what to scrub, rewrites history safely, and only then flips the repo private → public. User-invoked only (`/repo-scrub`). | `gh`, [`gitleaks`](https://github.com/gitleaks/gitleaks), [`git-filter-repo`](https://github.com/newren/git-filter-repo) |
 | [`grilling`](grilling/README.md) *(Matt Pocock)* | Interviews you relentlessly, one round of questions at a time with a recommendation attached to each, until a plan or decision is fully stress-tested. | none |
 | [`grill-me`](grill-me/README.md) *(Matt Pocock)* | Short alias for `grilling`. User-invoked only (`/grill-me`); Claude auto-invokes `grilling` instead. | none |
 | [`grill-docs`](grill-docs/README.md) | `grilling` with a paper trail: writes the Q→A transcript to `skilleddocs/grills/` as each round settles and appends every decision to `skilleddocs/decisions.md`, so planners, verifiers and teammates can read what was decided and why. | none |
@@ -65,6 +65,10 @@ Full explainer (inputs, outputs, procedure, guard hook): [`agents/README.md`](ag
 ### [`hooks/`](hooks/) — optional per-repo hooks
 
 Not auto-installed. [`smartzone.py`](hooks/smartzone.py) is a `UserPromptSubmit` hook that warns in-conversation when the transcript suggests context has left the smart zone (~100k tokens), so a session wraps up instead of degrading. [`spend-guard.py`](hooks/spend-guard.py) is a `PreToolUse` hook that blocks known billable commands/MCP calls (GPU pod creation, paid deploys, ...) unless an approval token from the [`spend-gate`](spend-gate/README.md) skill already exists. Copy + settings snippets in [`hooks/README.md`](hooks/README.md).
+
+### [`site/`](site/) — static skills site
+
+Claude-Code-style terminal home (type `/` + a skill name) plus a plain list of every skill and agent, generated from this repo by [`scripts/build_site.py`](scripts/build_site.py) (stdlib only). Per-skill detail pages and comments are in progress. Build, test and deploy steps in [`site/README.md`](site/README.md).
 
 `grilling` and `grill-me` are by [Matt Pocock](https://github.com/mattpocock/skills) (MIT, see [`THIRD_PARTY_LICENSES.md`](THIRD_PARTY_LICENSES.md)), included verbatim; `handoff` is his with the save location changed to `skilleddocs/handoffs/`, and `handoff-auto` is that with one frontmatter line removed. `grill-docs` is original and only wraps his `grilling`. `npx skills add mattpocock/skills` pulls his full set directly if you want more than these. Everything else here is original.
 
@@ -141,9 +145,8 @@ For `repo-scrub`, also install its CLI prerequisites:
 # Windows
 winget install --id Gitleaks.Gitleaks -e
 pip install git-filter-repo
-winget install --id GitHub.git-sizer -e
 # mac / linux
-brew install gitleaks git-filter-repo git-sizer
+brew install gitleaks git-filter-repo
 ```
 
 For anything under `kanban/`:

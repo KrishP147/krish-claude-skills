@@ -15,8 +15,9 @@ session:
 - Collect background task IDs from the transcript: every `Bash` or
   `PowerShell` call with `run_in_background`, every `Monitor` loop, every
   background `Agent` launch — minus those whose completion notification
-  already arrived. For each, `TaskOutput` (if available) for its last line
-  of output; report age (time since launched) and that line.
+  already arrived. For each, `Read` the task's output file (path given at
+  launch) for its last line of output — or `TaskOutput` (deprecated) if
+  that's all the session has; report age (time since launched) and that line.
 - `TaskList` (if available) is the session's to-do checklist, not background
   work — use it in §4, not here.
 - `ListAgents` (if available): other agents/sessions this one can message —
@@ -24,7 +25,8 @@ session:
 - Background `Agent` completions arrive as task notifications in the
   transcript, not as a tool call — scan recent turns for one you haven't
   surfaced yet.
-- No `TaskOutput`: report age only, and say last output wasn't checked.
+- No output file path and no `TaskOutput`: report age only, and say last
+  output wasn't checked.
 
 ## 2. Git state
 
