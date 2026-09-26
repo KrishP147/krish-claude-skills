@@ -65,3 +65,15 @@ Times: America/Toronto (EDT).
 - what: repo-scrub hardening (rotate-first gate, parse fix, fingerprint-only findings, LFS first, dedupe, 12 tests, CI step); new skill repo-showcase.
 - verified by: CI runs 36219898973, 36220015034 green; repo-scrub unittest 12/12 local
 - decided for you: #18 squashed onto a fresh branch (deviation from merge-commit style) → branch history held a key-shaped fake fixture that push protection/scanners would flag
+
+### 012 · 2026-09-26 02:30 EDT · merge
+- issue/PR: #17, #9, #23 (PRs #34-#36)
+- what: guard hook hardened (quote-aware parser, 175 self-tests, fails closed w/o python, Bash|PowerShell matcher) + CI runs hook self-tests; new skill gap-scan; kanban fixes (per-workflow CI check, status labels w/ pinned colors, Projects Status on add).
+- verified by: CI green on each PR (e.g. run 36220431400, 36220497750); guard self-test 175/175 local
+- decided for you: accepted Bash|PowerShell matcher scope creep → else PowerShell tool bypasses guard; `echo git push origin main` allowed (no exec)
+- manual step for user: re-run install-skills after pull so ~/.claude/agents gets the new hook command
+
+### 013 · 2026-09-26 02:32 EDT · decision
+- issue/PR: none
+- what: handoff budget (10) passed at 11 merges because loops ran in parallel; finishing in-flight #2, #19/#20, #11, #12, no new starts, then orchestrator handoff.
+- verified by: not verified: decision
