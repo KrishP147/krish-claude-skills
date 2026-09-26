@@ -15,7 +15,7 @@ argument-hint: "path to handoff doc (auto-finds newest matching file in the OS t
 
 5. **Update the board, if there is one.** Locate it the way `next` §1 does; a repo whose queue is a roadmap doc has no card to move — skip the card step, keep the issue comment/close. Comment on the relevant issue(s) with a summary. If complete and verified, close the issue and move its card to Done. If incomplete, leave it open and set the card/label to reflect where it actually stands.
    - Projects v2: move the card with `gh project item-edit` exactly as `session-handoff` §3 does (look up the IDs first; don't guess them).
-   - Label fallback: complete and verified → swap `status:in-review` for `status:done` (or `status:in-progress` for `status:done` if the card was never moved to review); partial/blocked → leave the label as is.
+   - Label fallback: create `status:done` first if missing (`gh label create status:done --color 0E8A16 --force` — see `next` §1); complete and verified → swap `status:in-review` for it (or `status:in-progress` for `status:done` if the card was never moved to review); partial/blocked → leave the label as is.
 
 6. **Escalate deviations.** If the handoff's `## Board status` section lists deviations or innovations, automatically call the Skill tool with `"consult-plan"` to reconcile them before finishing.
 

@@ -19,7 +19,7 @@ Grills a proposed change, deviation or new idea against the repo's existing plan
 
 1. **Baseline** (whatever exists): `gh issue list --state open`, board state (`gh project item-list` or `status:*` labels), a roadmap doc (`ROADMAP.md`, `docs/roadmap.md`, …).
 2. **Grill:** calls [`grilling`](../../grilling/) with that baseline, framed as fit / conflict / extension and what you want to happen.
-3. **Record**, first match wins: append to an existing decisions doc (e.g. `docs/decisions.md`); else comment on the relevant issue, or open a new one. A new issue also goes on the board's Todo column. Never invents a decisions-doc convention.
+3. **Record**, first match wins: append to an existing decisions doc (e.g. `docs/decisions.md`); else comment on the relevant issue, or open a new one. A new issue also goes on the board (Projects v2: `item-add` + `item-edit` to Todo; label: `status:todo`, created first if missing). Never invents a decisions-doc convention.
 
 ## Related
 
