@@ -27,7 +27,7 @@ MAX_DEPTH = 6
 SUBST = "__GUARD_SUBST_%d__"
 SUBST_RE = re.compile(r"__GUARD_SUBST_(\d+)__")
 DYNAMIC = "__GUARD_DYNAMIC__"
-RISKY_WORDS = re.compile(r"push|merge|delete|gh\s+api|refs/heads", re.I)
+RISKY_WORDS = re.compile(r"push|send-pack|merge|delete|gh\s+api|refs/heads", re.I)
 ASSIGN_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 REDIRECT_RE = re.compile(r"^\d*(>>?|<<<?|<<-?|<|>&|<&|&>>?|>\|)(.*)$")
 SHELLS = {"sh", "bash", "zsh", "dash", "ksh", "mksh", "ash"}
@@ -368,7 +368,7 @@ def fallback_check(seg, ctx):
     """shlex failed (unbalanced quotes): be conservative."""
     if re.search(r"\bgh\b.*\bmerge\b", seg):
         ctx.block("unparseable gh command mentioning merge.")
-    if not re.search(r"\bpush\b", seg):
+    if not re.search(r"\b(push|send-pack)\b", seg):
         return
     if re.search(r"\{[^{}]*(,|\.\.)[^{}]*\}", seg):
         ctx.block("unparseable push command with a brace expansion.")
@@ -539,7 +539,8 @@ GIT_ARG_OPTS = {"-C", "-c", "--git-dir", "--work-tree", "--namespace", "--super-
 GIT_KNOWN = {"push", "branch", "add", "commit", "status", "log", "diff", "show", "fetch", "pull", "checkout",
              "switch", "restore", "reset", "rebase", "merge", "stash", "tag", "remote", "config", "rev-parse",
              "worktree", "init", "clone", "mv", "rm", "grep", "blame", "cherry-pick", "revert", "clean",
-             "describe", "ls-files", "symbolic-ref", "update-ref", "for-each-ref", "reflog", "submodule", "help"}
+             "describe", "ls-files", "symbolic-ref", "update-ref", "for-each-ref", "reflog", "submodule", "help",
+             "send-pack", "http-push"}
 
 
 def check_git(args, ctx, subs, depth, alias_depth=0):
@@ -571,6 +572,8 @@ def check_git(args, ctx, subs, depth, alias_depth=0):
             return
     if sub == "push":
         check_push(rest, ctx, subs, cwd)
+    elif sub in ("send-pack", "http-push"):
+        check_send_pack(rest, ctx, subs, cwd, sub)
     elif sub == "branch":
         check_branch_delete(rest, ctx)
 
@@ -621,7 +624,24 @@ def check_push(args, ctx, subs, cwd):
                 ctx.block("git push -d (delete) is not allowed.")
             if flags.endswith("o"):
                 i += 1
-    refspecs = positional[1:]
+    check_refspecs(positional[1:], ctx, subs, cwd)
+
+
+def check_send_pack(args, ctx, subs, cwd, sub):
+    """`git send-pack`/`http-push [opts] <remote> <ref>...`: plumbing push."""
+    positional = []
+    for t in args:
+        lt = t.lower()
+        if not t.startswith("-") or t == "-":
+            positional.append(t)
+        elif lt.startswith(("--force", "--mirror", "--all", "--stdin", "--delete")) or re.fullmatch(r"-[a-z]*[fd][a-z]*", t):
+            ctx.block("git %s %s is not allowed." % (sub, t.split("=")[0]))
+    if len(positional) < 2:
+        ctx.block("git %s without explicit refs updates matching branches; name them." % sub)
+    check_refspecs(positional[1:], ctx, subs, cwd)
+
+
+def check_refspecs(refspecs, ctx, subs, cwd):
     needs_current = not refspecs
     for spec in refspecs:
         if spec.startswith("+"):
@@ -871,6 +891,19 @@ CASES = [
     ("git push origin HEAD@{0}:krish/x", A, "feat"),
     ("git push origin HEAD:heads/krish/x", A, "feat"),
     ("git push origin 'x:heads/main", B, "feat"),  # unparseable + DWIM
+    ("git send-pack origin main", B, "feat"),
+    ("git send-pack --force origin krish/x", B, "feat"),
+    ("git send-pack --all origin", B, "feat"),
+    ("git send-pack --mirror origin", B, "feat"),
+    ("git send-pack --stdin origin", B, "feat"),
+    ("git send-pack origin", B, "feat"),  # no refs = matching branches
+    ("git send-pack origin +krish/x", B, "feat"),
+    ("git send-pack origin HEAD:refs/heads/main", B, "feat"),
+    ("git send-pack --receive-pack=x origin HEAD", B, "main"),
+    ("git http-push https://h/r.git main", B, "feat"),
+    ("git send-pack origin 'main", B, "feat"),  # unparseable
+    ("git send-pack --thin origin krish/x", A, "feat"),
+    ("git send-pack origin HEAD", A, "krish/x"),
     ("gh pr merge 123", B, "feat"),
     ("gh pr merge --squash --auto 5", B, "feat"),
     ("gh -R o/r pr merge 5", B, "feat"),
