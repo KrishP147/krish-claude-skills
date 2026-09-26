@@ -32,13 +32,12 @@ slash command.
 
 ## How it works
 
-1. **What's running.** If the tools are available in this session: lists
-   background tasks (`Bash`/`PowerShell` with `run_in_background`, `Monitor`
-   loops, background `Agent` runs) via `TaskList`/`TaskGet`/`TaskOutput`,
-   with age and last output line; checks `ListAgents` for other addressable
-   agents; scans recent turns for background-agent task notifications not
-   yet surfaced. Tools not available → says so and reasons from the visible
-   transcript instead.
+1. **What's running.** Collects background task IDs from the transcript
+   (`Bash`/`PowerShell` with `run_in_background`, `Monitor` loops,
+   background `Agent` launches) minus those whose completion notification
+   already arrived; reports each one's age and, via `TaskOutput` if
+   available, its last output line. Checks `ListAgents` (if available) for
+   other addressable agents.
 2. **Git.** `git worktree list`; per worktree, whether it has an upstream
    and, if so, unpushed commits (`git log @{u}..`); `git status --porcelain`
    for dirty trees.
@@ -85,9 +84,10 @@ mid-flight work, saved under `skilleddocs/handoffs/`.
 
 ## Tips
 
-- If background-task tools (`TaskList`, `ListAgents`, etc.) aren't enabled in
-  your session, `sitrep` still works — it just reasons from the transcript
-  and says so, so you know the check is weaker than usual.
+- If `TaskOutput` / `ListAgents` aren't enabled in your session, `sitrep`
+  still works from the transcript alone and says the last-output check was
+  skipped. `TaskList` is the session to-do list, not background work; it
+  only feeds the asked-vs-done line.
 - "Can I close this?" and "close this" are different asks: the former is a
   read-only verdict (§6); only the latter (or an explicit "yes, stop them")
   triggers the gated stop-and-handoff flow in §7.
@@ -121,6 +121,6 @@ Verdict: NOT SAFE - background test run still failing, fix/date-parse unpushed
 
 ## Prereqs
 
-`gh` for the PR/CI check. Background-task tools (`TaskList`, `TaskOutput`,
-`ListAgents`, `TaskStop`, `Monitor`) are optional — used when available,
+`gh` for the PR/CI check. `TaskOutput`, `TaskStop`, `TaskList` and
+`ListAgents` are optional — used when available,
 skipped with a note otherwise.

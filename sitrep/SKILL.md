@@ -10,20 +10,21 @@ happens through the `handoff-auto` skill, never directly.
 ## 1. What's running
 
 Check for background work, if the relevant tools are available in this
-session — say so and skip silently if not:
+session:
 
-- `TaskList` / `TaskGet` / `TaskOutput` (if available): every background
-  task, whichever tool started it — a `Bash` or `PowerShell` call with
-  `run_in_background`, a `Monitor` loop, or a background `Agent` run. Report
-  each one's age (time since started) and its last line of output.
+- Collect background task IDs from the transcript: every `Bash` or
+  `PowerShell` call with `run_in_background`, every `Monitor` loop, every
+  background `Agent` launch — minus those whose completion notification
+  already arrived. For each, `TaskOutput` (if available) for its last line
+  of output; report age (time since launched) and that line.
+- `TaskList` (if available) is the session's to-do checklist, not background
+  work — use it in §4, not here.
 - `ListAgents` (if available): other agents/sessions this one can message —
   note any that look stalled (no output in a long while).
 - Background `Agent` completions arrive as task notifications in the
   transcript, not as a tool call — scan recent turns for one you haven't
   surfaced yet.
-- None of the above available: reason from the visible transcript instead —
-  which `run_in_background` shells or `Agent` calls in this conversation
-  haven't returned a result yet — and say the check was transcript-only.
+- No `TaskOutput`: report age only, and say last output wasn't checked.
 
 ## 2. Git state
 
@@ -43,7 +44,8 @@ PR's checks as passing / failing / pending.
 ## 4. Asked vs. done
 
 Scan this conversation's user messages and build a short checklist: each
-distinct thing asked for, marked done / in progress / not started. This is
+distinct thing asked for, marked done / in progress / not started
+(cross-check `TaskList` if available). This is
 about *this session's* asks, not the whole backlog — that's what
 `progress-report` is for.
 
