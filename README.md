@@ -24,7 +24,7 @@ Each tier builds on the one above: `pair` is one orchestrator loop without the b
 
 | Skill | What it does | Prereqs |
 |---|---|---|
-| [`repo-scrub`](repo-scrub/README.md) | Scans a GitHub repo's full git history for secrets and oversized files, lets you pick exactly what to scrub, rewrites history safely, and only then flips the repo private → public. User-invoked only (`/repo-scrub`). | `gh`, [`gitleaks`](https://github.com/gitleaks/gitleaks), [`git-filter-repo`](https://github.com/newren/git-filter-repo), [`git-sizer`](https://github.com/github/git-sizer) |
+| [`repo-scrub`](repo-scrub/README.md) | Scans a GitHub repo's full git history for secrets and oversized files, lets you pick exactly what to scrub, rewrites history safely, and only then flips the repo private → public. User-invoked only (`/repo-scrub`). | `gh`, [`gitleaks`](https://github.com/gitleaks/gitleaks), [`git-filter-repo`](https://github.com/newren/git-filter-repo) |
 | [`grilling`](grilling/README.md) *(Matt Pocock)* | Interviews you relentlessly, one round of questions at a time with a recommendation attached to each, until a plan or decision is fully stress-tested. | none |
 | [`grill-me`](grill-me/README.md) *(Matt Pocock)* | Short alias for `grilling`. User-invoked only (`/grill-me`); Claude auto-invokes `grilling` instead. | none |
 | [`grill-docs`](grill-docs/README.md) | `grilling` with a paper trail: writes the Q→A transcript to `skilleddocs/grills/` as each round settles and appends every decision to `skilleddocs/decisions.md`, so planners, verifiers and teammates can read what was decided and why. | none |
@@ -37,6 +37,7 @@ Each tier builds on the one above: `pair` is one orchestrator loop without the b
 | [`pr-watch`](pr-watch/README.md) | Watches your open PRs until merged: pulls bot and human review threads (CodeRabbit, Copilot, maintainers), fixes valid ones via `pair`, replies to or resolves the rest with cited evidence, reports CI (fork `action_required` = needs maintainer approval, not failing). Every push, reply, resolve, and bot re-trigger is gated on an explicit yes. | `gh`; `pair`'s agents for the fix step |
 | [`sitrep`](sitrep/README.md) | Live, conversational status check in 10 lines or fewer: what's running, git state, open PRs + CI, an asked-vs-done checklist, needs-you items, and a SAFE/NOT SAFE close verdict. Gated stop-and-handoff on explicit "close". Read-only otherwise. | `gh`; background-task tools if available (optional) |
 | [`gap-scan`](gap-scan/README.md) | Surveys one or more repos (sync, README/docs, recent commits, TODOs, tests, open issues, an optional visual pass for UI apps) and returns a ranked, evidence-cited list of gaps, bugs, and extensions as issue-ready items. Read-only: writes one report under `skilleddocs/gaps/`; creating issues needs an explicit yes. | `gh` |
+| [`repo-showcase`](repo-showcase/README.md) | Gets a repo's working tree ready to be seen: rewrites the README around outcome and demo, prunes stale docs, fixes claims the code has outdated, scans for secrets and private names, proposes GitHub metadata. Never touches history or visibility — hands off to `repo-scrub` for that. | `gh` (metadata step only) |
 
 ### [`kanban/`](kanban/) — GitHub-Issues-as-kanban-board workflow
 
@@ -57,7 +58,7 @@ Needs `gh auth refresh -s project -s read:project` once (see [`kanban/README.md`
 |---|---|---|---|
 | [`planner`](agents/README.md#planner) ([def](agents/planner.md)) | opus | `next`, `divide` | no Edit/Write; proposes splits, never creates issues; returns a ≤40-line kickoff brief |
 | [`manager`](agents/README.md#manager) ([def](agents/manager.md)) | opus | `handoff-auto` | spawns its own `implementer`, reviews the diff and reruns tests itself, restarts a fresh implementer from `skilleddocs/HANDOFF.md` when one stalls (≤3 rounds); same `guard-git.py` hook as the implementer; never pushes |
-| [`implementer`](agents/README.md#implementer) ([def](agents/implementer.md)) | sonnet | `handoff-auto`, `session-handoff` | a `PreToolUse` hook ([`guard-git.py`](agents/hooks/guard-git.py)) blocks pushes to protected branches (`main`/`master`), force/`--mirror`/`--delete` pushes, bare `git push` while on a protected branch, `gh pr merge`, `gh repo delete` and deleting a protected branch; writes `skilleddocs/HANDOFF.md` when stuck or past the smart zone; ends with the handoff path |
+| [`implementer`](agents/README.md#implementer) ([def](agents/implementer.md)) | sonnet | `handoff-auto`, `session-handoff` | a `PreToolUse` hook ([`guard-git.py`](agents/hooks/guard-git.py)) blocks pushes to protected branches (`main`/`master`, incl. `HEAD:main`, `refs/heads/main`), force (`--force*`, `-f`, `+refspec`)/`--mirror`/`--delete` pushes, bare `git push` while on a protected branch, `gh pr merge`, `gh api` merges/protected-ref writes, `gh repo delete` and deleting a protected branch, also inside `bash -c`/`pwsh -Command`/`$(...)`; fails closed (exit 2) when no Python 3.8+ is found; a guardrail, not a sandbox, so pair it with GitHub branch protection; writes `skilleddocs/HANDOFF.md` when stuck or past the smart zone; ends with the handoff path |
 | [`verifier`](agents/README.md#verifier) ([def](agents/verifier.md)) | opus | `update-progress`, `consult-plan`, `next` | verifies against git log/tests/CI, reviews the diff, lists every question it answered on your behalf; no guard hook — may commit doc/board fixes to the default branch |
 
 Full explainer (inputs, outputs, procedure, guard hook): [`agents/README.md`](agents/README.md). They also work on their own: "use the planner agent to brief the next issue" is a fine prompt without the orchestrator. Set `GUARD_PROTECTED_BRANCHES=main,develop` to change what the hook protects. Agents can spawn agents (`manager` → `implementer`); only the built-in `fork` type can't nest.
@@ -65,6 +66,10 @@ Full explainer (inputs, outputs, procedure, guard hook): [`agents/README.md`](ag
 ### [`hooks/`](hooks/) — optional per-repo hooks
 
 Not auto-installed. [`smartzone.py`](hooks/smartzone.py) is a `UserPromptSubmit` hook that warns in-conversation when the transcript suggests context has left the smart zone (~100k tokens), so a session wraps up instead of degrading. [`spend-guard.py`](hooks/spend-guard.py) is a `PreToolUse` hook that blocks known billable commands/MCP calls (GPU pod creation, paid deploys, ...) unless an approval token from the [`spend-gate`](spend-gate/README.md) skill already exists. Copy + settings snippets in [`hooks/README.md`](hooks/README.md).
+
+### [`site/`](site/) — static skills site
+
+Claude-Code-style terminal home (type `/` + a skill name) plus a plain list of every skill and agent, generated from this repo by [`scripts/build_site.py`](scripts/build_site.py) (stdlib only). Per-skill detail pages and comments are in progress. Build, test and deploy steps in [`site/README.md`](site/README.md).
 
 `grilling` and `grill-me` are by [Matt Pocock](https://github.com/mattpocock/skills) (MIT, see [`THIRD_PARTY_LICENSES.md`](THIRD_PARTY_LICENSES.md)), included verbatim; `handoff` is his with the save location changed to `skilleddocs/handoffs/`, and `handoff-auto` is that with one frontmatter line removed. `grill-docs` is original and only wraps his `grilling`. `npx skills add mattpocock/skills` pulls his full set directly if you want more than these. Everything else here is original.
 
@@ -141,9 +146,8 @@ For `repo-scrub`, also install its CLI prerequisites:
 # Windows
 winget install --id Gitleaks.Gitleaks -e
 pip install git-filter-repo
-winget install --id GitHub.git-sizer -e
 # mac / linux
-brew install gitleaks git-filter-repo git-sizer
+brew install gitleaks git-filter-repo
 ```
 
 For anything under `kanban/`:

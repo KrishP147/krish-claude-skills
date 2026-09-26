@@ -35,8 +35,8 @@ slash command.
 1. **What's running.** Collects background task IDs from the transcript
    (`Bash`/`PowerShell` with `run_in_background`, `Monitor` loops,
    background `Agent` launches) minus those whose completion notification
-   already arrived; reports each one's age and, via `TaskOutput` if
-   available, its last output line. Checks `ListAgents` (if available) for
+   already arrived; reports each one's age and its last output line (read
+   from the task's output file, or `TaskOutput`, now deprecated). Checks `ListAgents` (if available) for
    other addressable agents.
 2. **Git.** `git worktree list`; per worktree, whether it has an upstream
    and, if so, unpushed commits (`git log @{u}..`); `git status --porcelain`
@@ -84,9 +84,10 @@ mid-flight work, saved under `skilleddocs/handoffs/`.
 
 ## Tips
 
-- If `TaskOutput` / `ListAgents` aren't enabled in your session, `sitrep`
-  still works from the transcript alone and says the last-output check was
-  skipped. `TaskList` is the session to-do list, not background work; it
+- If `ListAgents` isn't enabled, or a background task's output file path
+  isn't in the transcript, `sitrep` still works from the transcript alone and
+  says the last-output check was skipped. (`TaskOutput` is deprecated in
+  favor of `Read` on the output file.) `TaskList` is the session to-do list, not background work; it
   only feeds the asked-vs-done line.
 - "Can I close this?" and "close this" are different asks: the former is a
   read-only verdict (§6); only the latter (or an explicit "yes, stop them")
@@ -121,6 +122,6 @@ Verdict: NOT SAFE - background test run still failing, fix/date-parse unpushed
 
 ## Prereqs
 
-`gh` for the PR/CI check. `TaskOutput`, `TaskStop`, `TaskList` and
+`gh` for the PR/CI check. `TaskOutput` (deprecated), `TaskStop`, `TaskList` and
 `ListAgents` are optional — used when available,
 skipped with a note otherwise.
