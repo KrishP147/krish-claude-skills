@@ -399,6 +399,19 @@ def run_segment(toks, ctx, subs, depth):
         return shell_c(rest, ctx, depth)
     if head in PWSH:
         return pwsh_c(rest, ctx, depth)
+    if head == "find":
+        # `find . -exec git push origin main \;`: each -exec/-ok command runs.
+        i = 0
+        while i < len(rest):
+            if rest[i] in ("-exec", "-execdir", "-ok", "-okdir"):
+                j = i + 1
+                while j < len(rest) and rest[j] not in (";", "+"):
+                    j += 1
+                sub_toks = [t.replace("{}", DYNAMIC) for t in rest[i + 1:j]]
+                run_segment(sub_toks, ctx, subs, depth + 1)
+                i = j
+            i += 1
+        return False
     if head == "watch":
         i = 0
         while i < len(rest) and rest[i].startswith("-"):
@@ -854,6 +867,14 @@ CASES = [
     ("watch -d 'git push origin main'", B, "feat"),
     ("time -p git push origin krish/x", A, "feat"),
     ("watch -n 5 git status", A, "main"),
+    ("find . -maxdepth 0 -exec git push origin main \\;", B, "feat"),
+    ("find . -execdir git push origin main ';'", B, "feat"),
+    ("find . -ok git push --force origin x \\;", B, "feat"),
+    ("find . -name x -exec echo {} \\; -exec git push origin main +", B, "feat"),
+    ("find refs -exec git push origin {} \\;", B, "feat"),
+    ("find . -exec sh -c 'git push origin {}' \\;", B, "feat"),
+    ("find . -name '*.py' -exec grep -n main {} +", A, "main"),
+    ("find . -exec git push origin krish/x \\;", A, "feat"),
     ("g''it pu\\sh origin ma''in", B, "feat"),
     ("bash -c 'git push origin main'", B, "feat"),
     ("sh -c \"cd x && git push origin main\"", B, "feat"),
