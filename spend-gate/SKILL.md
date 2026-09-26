@@ -86,18 +86,10 @@ is gone. The filename is only a label for your own audit trail - contents
 are ignored by the hook, but copying the same amount/purpose you logged in
 `spend.md` into the file's contents costs nothing and helps later.
 
-For an MCP tool call, there's no command line to prefix an approval onto,
-so export the token instead and unset it right after:
-
-```bash
-export SPEND_GATE_APPROVED=runpod-pod-2026-09-26
-# ... make the one approved MCP call ...
-unset SPEND_GATE_APPROVED
-```
-
-This form is **not** auto-consumed - leaving it set approves every matching
-call for the rest of the session, so unset it immediately after the one
-call it was meant for.
+For a single Bash command you can instead prefix it:
+`SPEND_GATE_APPROVED=<label> <command>` (covers that one invocation only).
+For an MCP tool call use the approval file - `export` in a Bash tool call
+does not reach the hook's environment.
 
 Never write an approval file or set `SPEND_GATE_APPROVED` before step 4's
 explicit yes has actually happened - the hook only enforces that a token

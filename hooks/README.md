@@ -93,9 +93,15 @@ Approval scheme (either allows the one matched action):
    `SPEND_GATE_APPROVED=yes runpodctl create pod ...` — this is a shell
    per-command env assignment, read out of the command string itself (the
    hook never executes the command), so it only ever covers that one
-   invocation. For an MCP tool call there's no command line to prefix, so
-   export it in the session first and **unset it right after** — this form
-   is not auto-consumed and will approve every matching call until unset.
+   invocation. For an MCP tool call use the approval file: `export` inside a
+   Bash tool call never reaches the hook's environment. The hook does also
+   honour `SPEND_GATE_APPROVED` in the environment Claude Code was launched
+   with, but that approves every matching call for the whole session, so
+   avoid it.
+
+This is a tripwire, not a security boundary: an agent that can write files
+can write its own approval. It catches a skipped gate. It can't stop an
+agent that ignores the skill.
 
 Patterns are extendable, without editing the script:
 

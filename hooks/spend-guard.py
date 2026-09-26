@@ -32,10 +32,13 @@ Approval (either one allows the single matched action):
          shell per-command env assignment, so it is read out of the command
          string itself (this hook does not execute the command) and only
          ever covers that one invocation.
-       - MCP tool calls (no command line to prefix): export
-         SPEND_GATE_APPROVED=<label> in the session before the call. This
-         is NOT auto-consumed - unset it yourself once you're done, or it
-         will approve every matching call for the rest of the session.
+       - Process env: only if set when Claude Code was launched (`export`
+         inside a Bash tool call never reaches this hook). Approves every
+         matching call for the session - avoid; use the approval file for
+         MCP tool calls.
+
+Tripwire, not a security boundary: an agent that can write files can write
+its own approval. It catches a skipped gate, not a hostile agent.
 """
 import fnmatch
 import json
@@ -197,8 +200,7 @@ def approval_hint():
         "Approve with ONE of: (1) drop a file into "
         "skilleddocs/spend-approvals/ (one-shot, consumed on use); "
         "(2) prefix the Bash command with SPEND_GATE_APPROVED=<label> "
-        "(covers just that command); (3) for an MCP tool call, export "
-        "SPEND_GATE_APPROVED=<label> first and unset it after. "
+        "(covers just that command). MCP tool calls: use the file. "
         "See the spend-gate skill: estimate, check balance, get an "
         "explicit yes for this action, log it, before approving."
     )
@@ -268,6 +270,10 @@ def run_self_test():
 
     passed = 0
     failed = 0
+    # Never read the real env or touch a real approvals dir: every check()
+    # below gets an explicit env pointing at an empty temp dir.
+    empty_dir = tempfile.mkdtemp(prefix="spend-guard-selftest-")
+    iso = {"SPEND_GATE_APPROVALS_DIR": empty_dir}
 
     def record(label, ok, extra=""):
         nonlocal passed, failed
@@ -279,7 +285,7 @@ def run_self_test():
         print("%s: %-55s %s" % (status, label, extra))
 
     # 1. non-billable Bash command is allowed
-    reason = check("Bash", {"command": "echo hello"}, None)
+    reason = check("Bash", {"command": "echo hello"}, None, env=iso)
     record("non-billable Bash command allowed", reason is None)
 
     # 2. each default bash pattern blocks
@@ -292,17 +298,17 @@ def run_self_test():
         "modal deploy app.py",
     ]
     for cmd in default_cases:
-        reason = check("Bash", {"command": cmd}, None)
+        reason = check("Bash", {"command": cmd}, None, env=iso)
         record("default pattern blocks: %s" % cmd, reason is not None)
 
     # 3. unrelated tool name with no command is allowed
-    reason = check("Read", {"file_path": "x.txt"}, None)
+    reason = check("Read", {"file_path": "x.txt"}, None, env=iso)
     record("non-Bash, non-MCP tool allowed", reason is None)
 
     # 4. MCP glob blocks
-    reason = check("mcp__runpod__create-pod", {}, None)
+    reason = check("mcp__runpod__create-pod", {}, None, env=iso)
     record("MCP glob blocks create-pod", reason is not None)
-    reason = check("mcp__runpod__list-pods", {}, None)
+    reason = check("mcp__runpod__list-pods", {}, None, env=iso)
     record("MCP tool not matching a glob is allowed", reason is None)
 
     # 5. file-based approval allows, and is consumed (one-shot)
@@ -322,17 +328,17 @@ def run_self_test():
 
     # 6. env approval allows - inline (Bash), process env (MCP)
     reason = check(
-        "Bash", {"command": "SPEND_GATE_APPROVED=yes runpodctl create pod x"}, None
+        "Bash", {"command": "SPEND_GATE_APPROVED=yes runpodctl create pod x"}, None, env=iso
     )
     record("inline SPEND_GATE_APPROVED prefix allows Bash command", reason is None)
 
     reason = check(
-        "mcp__runpod__create-pod", {}, None, env={"SPEND_GATE_APPROVED": "yes"}
+        "mcp__runpod__create-pod", {}, None, env=dict(iso, SPEND_GATE_APPROVED="yes")
     )
     record("process-env SPEND_GATE_APPROVED allows MCP call", reason is None)
 
     # 7. custom pattern via env var blocks
-    env = {"SPEND_GUARD_PATTERNS": r"bash:\bdoctl\s+droplets\s+create\b"}
+    env = dict(iso, SPEND_GUARD_PATTERNS=r"bash:\bdoctl\s+droplets\s+create\b")
     reason = check(
         "Bash", {"command": "doctl droplets create --region nyc1"}, None, env=env
     )
@@ -344,7 +350,7 @@ def run_self_test():
         os.makedirs(claude_dir)
         with open(os.path.join(claude_dir, "spend-guard-patterns.txt"), "w") as f:
             f.write("# comment line\nmcp:mcp__*digitalocean*__create-*\n")
-        reason = check("mcp__digitalocean__create-droplet", {}, tmp)
+        reason = check("mcp__digitalocean__create-droplet", {}, tmp, env=iso)
         record("custom MCP glob via patterns file blocks", reason is not None)
 
     # 9. malformed stdin fails open (never raises, never blocks) - run the
