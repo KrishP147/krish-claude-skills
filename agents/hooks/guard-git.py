@@ -256,8 +256,74 @@ def tokenize(seg):
         if m:
             skip = m.group(2) == ""
             continue
-        toks.append(t)
+        toks.extend(brace_expand(t))
     return toks
+
+
+BRACE_LIMIT = 64
+SEQ_RE = re.compile(r"^(-?\d+|[A-Za-z])\.\.(-?\d+|[A-Za-z])(\.\.-?\d+)?$")
+
+
+def _brace_alts(inner):
+    """Alternatives of a `{...}` body, or None if bash would not expand it."""
+    parts, depth, start = [], 0, 0
+    for k, c in enumerate(inner):
+        if c == "{":
+            depth += 1
+        elif c == "}":
+            depth -= 1
+        elif c == "," and depth == 0:
+            parts.append(inner[start:k])
+            start = k + 1
+    if parts:
+        return parts + [inner[start:]]
+    m = SEQ_RE.match(inner)
+    if not m:
+        return None
+    a, b = m.group(1), m.group(2)
+    if a.lstrip("-").isdigit() and b.lstrip("-").isdigit():
+        a, b = int(a), int(b)
+        if abs(b - a) >= BRACE_LIMIT:
+            return [DYNAMIC]
+        step = 1 if b >= a else -1
+        return [str(x) for x in range(a, b + step, step)]
+    if len(a) == 1 and len(b) == 1 and not a.isdigit() and not b.isdigit():
+        step = 1 if b >= a else -1
+        return [chr(x) for x in range(ord(a), ord(b) + step, step)]
+    return None
+
+
+def brace_expand(tok):
+    """Bash brace expansion (`ma{i,}n`, `{a..c}`) of one token. shlex has
+    already dropped quotes, so quoted braces expand too (conservative). Too
+    many results -> a single dynamic token."""
+    i = 0
+    while True:
+        i = tok.find("{", i)
+        if i == -1:
+            return [tok]
+        if i > 0 and tok[i - 1] == "$":
+            i += 1
+            continue
+        depth, j = 0, i
+        while j < len(tok):
+            if tok[j] == "{":
+                depth += 1
+            elif tok[j] == "}":
+                depth -= 1
+                if depth == 0:
+                    break
+            j += 1
+        alts = _brace_alts(tok[i + 1:j]) if j < len(tok) else None
+        if alts is None:
+            i += 1
+            continue
+        out = []
+        for alt in alts:
+            out.extend(brace_expand(tok[:i] + alt + tok[j + 1:]))
+            if len(out) > BRACE_LIMIT:
+                return [tok + DYNAMIC]
+        return out
 
 
 def base(tok):
@@ -304,6 +370,8 @@ def fallback_check(seg, ctx):
         ctx.block("unparseable gh command mentioning merge.")
     if not re.search(r"\bpush\b", seg):
         return
+    if re.search(r"\{[^{}]*(,|\.\.)[^{}]*\}", seg):
+        ctx.block("unparseable push command with a brace expansion.")
     words = re.findall(r"[\w./+-]+", seg)
     for w in words:
         w2 = w.lstrip("+").split(":")[-1]
@@ -749,6 +817,18 @@ CASES = [
     ("git push origin 'unterminated main", B, "feat"),
     ("git push origin \"unterminated -f", B, "feat"),
     ("git push origin x # main", A, "feat"),
+    ("git push origin ma{i,}n", B, "feat"),
+    ("git push origin {main,x}", B, "feat"),
+    ("git push origin {x,+main}", B, "feat"),
+    ("git push origin x:{main,y}", B, "feat"),
+    ("git push {origin,main}", B, "feat"),
+    ("git push origin 'ma{i,}n'", B, "feat"),  # quoted braces expand too: conservative
+    ("git push origin ma{h..j}n", B, "feat"),
+    ("git push origin x{1..999}", B, "feat"),  # too many to expand -> dynamic
+    ("git push origin {krish/a,krish/b}", A, "feat"),
+    ("git push origin krish/{docs}", A, "feat"),  # no comma: bash leaves it literal
+    ("git push origin main^{}:krish/x", A, "feat"),
+    ("git push origin 'ma{i,}n", B, "feat"),  # unparseable + brace
     ("gh pr merge 123", B, "feat"),
     ("gh pr merge --squash --auto 5", B, "feat"),
     ("gh -R o/r pr merge 5", B, "feat"),
@@ -770,6 +850,8 @@ CASES = [
     ("git commit -m \"fix main push\"", A, "feat"),
     ("git commit -m 'git push origin main --force'", A, "main"),
     ("git log main..HEAD", A, "feat"),
+    ("git log --format='%h {x,y}'", A, "main"),
+    ("mkdir -p src/{a,b}/main", A, "main"),
     ("git log --oneline origin/main", A, "main"),
     ("git diff main...HEAD", A, "feat"),
     ("git fetch origin main", A, "feat"),
