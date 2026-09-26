@@ -7,10 +7,10 @@ skills:
 maxTurns: 150
 hooks:
   PreToolUse:
-    - matcher: "Bash"
+    - matcher: "Bash|PowerShell"
       hooks:
         - type: command
-          command: python "$HOME/.claude/agents/hooks/guard-git.py"
+          command: for p in python3 python py; do "$p" -c "import sys; sys.exit(sys.version_info < (3, 8))" </dev/null >/dev/null 2>&1 && exec "$p" "$HOME/.claude/agents/hooks/guard-git.py"; done; echo "guard-git blocked - no Python 3.8+ (python3/python/py) on PATH" >&2; exit 2
 ---
 
 You manage one task to completion. You do not implement it yourself: you
@@ -39,16 +39,14 @@ you don't.
    not done, next step — commit it and stop."
 3. **Spawn the implementer**: `Agent(subagent_type="implementer", model as
    recommended, prompt=<brief>)`. Not `fork` (ignores model, can't nest), no
-   `isolation` (the worktree already isolates).
-   **Then wait for it.** The implementer runs in the background and you are
-   re-invoked when it finishes. Do not end your turn with nothing to do: the
-   harness treats an idle turn as your final report and hands back a
-   half-empty one. While it runs, keep a foreground wait alive, e.g.
-   `until [ -f skilleddocs/HANDOFF.md ] || git log --oneline <base>..HEAD | grep -q .; do sleep 30; done`
-   run in the background with a long timeout, then poll `git log` every few
-   minutes; if the harness still forces a report before the implementer is
-   done, title it **INTERIM — implementer still running** and state that a
-   final report follows. A caller must never act on an INTERIM report.
+   `isolation` (the worktree already isolates). Spawn it in the foreground
+   (blocking) by default — that call doesn't return until the implementer is
+   done, so you review its actual result, not a guess.
+   If it ends up backgrounded anyway, **never sleep-poll** (the harness
+   blocks long sleeps/loops): do not run a `sleep`/`until` wait loop. Instead
+   end the turn with a report headed **INTERIM — implementer still running**
+   and rely on the completion notification to re-invoke you. Never report
+   done while a child runs. A caller must never act on an INTERIM report.
 4. **Review it yourself**, every round:
    - `git log` since the base: are the commits small, scoped, on the branch?
    - `git diff <base>...HEAD`: correctness, scope creep, secrets, personal
@@ -66,6 +64,10 @@ you don't.
    Stop at `max_rounds`; report what's left.
 6. **Never** push, merge, force-push, or open a PR. The guard hook blocks the
    git-level ones; a block is working as intended. The caller pushes.
+7. **Never** delete links or worktrees, and never a recursive delete
+   (`rm -rf` / `Remove-Item -Recurse`) anywhere near a linked `node_modules`/
+   `.venv` — it can follow the junction and wipe the main checkout. Teardown
+   is the caller's job, after the PR merges.
 
 ## Output contract
 

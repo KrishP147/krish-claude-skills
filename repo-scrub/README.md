@@ -19,24 +19,27 @@ Scans a GitHub repo's **full git history** for secrets and oversized files, lets
 
 Defaults to the current repo. User-invoked only (`disable-model-invocation: true`) because it rewrites history and force-pushes.
 
-Prereqs: `gh` (authenticated), [`gitleaks`](https://github.com/gitleaks/gitleaks), [`git-filter-repo`](https://github.com/newren/git-filter-repo), [`git-sizer`](https://github.com/github/git-sizer). Install commands are in the [top README](../README.md#install).
+Prereqs: `gh` (authenticated), [`gitleaks`](https://github.com/gitleaks/gitleaks), [`git-filter-repo`](https://github.com/newren/git-filter-repo). Install commands are in the [top README](../README.md#install). No separate sizing tool — before/after repo size comes from `git count-objects -vH`.
 
 ## How it works
 
 0. Confirms the target repo and that you accept a history rewrite + force-push.
 1. **Prereq check** — version-checks each tool; stops with the install command if one is missing.
 2. **Confirm target** — `gh repo view … --json name,owner,isPrivate,defaultBranchRef`.
-3. **Scan (throwaway clone #1)** — `gitleaks detect` over all history, `git filter-repo --analyze`, `git-sizer --json`. [`scripts/summarize_findings.py`](scripts/summarize_findings.py) merges them into `findings.json` with IDs `S1…` (secrets) and `L1…` (large blobs). The clone is then discarded.
-4. **Report** — table of every finding (no raw secret values) + summary line.
-5. **Select** — you pick per ID or in bulk; Claude echoes back scrub vs keep lists.
-6. **Collaborator / open-PR safety** — lists collaborators, invitations, open PRs, fork count; drafts a re-clone notice. Hard gate.
-7. **Rewrite (fresh clone #2)** — [`scripts/build_replace_text.py`](scripts/build_replace_text.py) writes `expressions.txt` without echoing secrets; one `git filter-repo --replace-text … --path … --invert-paths` call. For large files you choose: strip entirely, or strip history and re-add the current version.
-8. **Verify** — re-run gitleaks, spot-check sizes, before/after counts. Confirm gate.
-9. **Force-push** — re-adds `origin`, `push --force --all` and `--tags`.
-10. **Post-push** — lists PRs that must be recreated.
-11. **Visibility flip** — `gh repo edit --visibility public …` after a separate gate explaining the consequences; verifies `isPrivate`.
+3. **Git LFS check** — bails with a warning before scanning if `.gitattributes` shows LFS-tracked paths; `git filter-repo` has no LFS awareness.
+4. **Scan (throwaway clone #1)** — `gitleaks git` (or `detect --source` pre-8.19) over all history, `git filter-repo --analyze`. [`scripts/summarize_findings.py`](scripts/summarize_findings.py) merges them into `findings.json` — written to a work dir *outside* the clone — with IDs `S1…` (secrets, deduped by rule + value, fingerprint only, no raw value on disk) and `L1…` (large blobs, sized by bytes accumulated across all versions of that path in history). The clone is then discarded.
+5. **Report** — table of every finding (no raw secret values, just fingerprints) + summary line.
+6. **Select** — you pick per ID or in bulk; Claude echoes back scrub vs keep lists.
+7. **Rotate first (mandatory)** — rotate/revoke every selected secret at its source before any rewrite; a rewrite doesn't un-leak a secret that was ever pushed. Checklist by type (cloud keys, API tokens, private keys/certs, DB passwords, webhook URLs). Hard gate.
+8. **Collaborator / open-PR safety** — lists collaborators, invitations, open PRs, fork count; drafts a re-clone notice. Hard gate.
+9. **Rewrite (fresh clone #2)** — [`scripts/build_replace_text.py`](scripts/build_replace_text.py) re-derives each secret's value from the gitleaks report by fingerprint and writes `expressions.txt` without ever echoing a value; one `git filter-repo` call, `--replace-text`/`--path …--invert-paths` each included only if that category was actually selected. For large files you choose: strip entirely, or strip history and re-add the current version.
+10. **Verify** — re-run gitleaks, spot-check sizes, before/after `git count-objects -vH`. Confirm gate.
+11. **Force-push** — re-adds `origin`, `push --force --all` and `--tags`.
+12. **Post-push** — lists PRs that must be recreated; notes that old commits can still be reachable on GitHub via `refs/pull/*`/cached views until GitHub Support GCs them.
+13. **Visibility flip** — `gh repo edit --visibility public …` after a separate gate explaining the consequences; verifies `isPrivate`.
+14. **Cleanup** — deletes the work dir (gitleaks report, findings.json, expressions.txt) and leftover clones.
 
-Bails out on Git LFS repos. Never scans or rewrites your working clone.
+Bails out on Git LFS repos (step 3). Never scans or rewrites your working clone.
 
 ## Related
 
@@ -48,4 +51,4 @@ Standalone; no other skills or agents.
 /repo-scrub myorg/tool
 ```
 
-Finds `S1` (an API key in `config/dev.env`, 3 commits) and `L1` (a 340 MB demo video). You scrub both; Claude warns about 1 open PR, you approve, it rewrites clone #2, verifies gitleaks is clean, force-pushes, lists the PR to recreate, then asks separately before making the repo public.
+Finds `S1` (an API key in `config/dev.env`, 3 commits) and `L1` (a 340 MB demo video, accumulated across history). You scrub both; Claude tells you to rotate the API key first and waits for confirmation, then warns about 1 open PR, you approve, it rewrites clone #2, verifies gitleaks is clean, force-pushes, lists the PR to recreate, asks separately before making the repo public, then deletes the work dir holding the gitleaks report and findings.json.

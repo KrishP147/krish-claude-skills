@@ -88,6 +88,9 @@ Agent(subagent_type="verifier",    prompt="<handoff or report path> + interview-
 
 Worktrees (`../_worktrees/<repo>-<slug>`) are optional in pair mode; use one
 when two managers might run at once or the repo's checkout must stay clean.
+If a worktree needs deps, link them from the main checkout rather than
+reinstalling, and tear down links-first, never a recursive delete through
+them — see `pair` §2/§5 for the exact commands.
 
 **Fan-out inside agents stalls.** Any skill that itself spawns subagents
 (a `code-review` with parallel reviewers, and the like) must be told to run
@@ -106,7 +109,10 @@ under a verifier under you is not.
    fix yourself). The manager's review is an input, not a substitute.
 3. Push the branch yourself (agents can't); merge in the repo's style (merge
    vs squash); delete branch; fast-forward default.
-4. Append a ledger entry (§5), commit it on the default branch
+4. Tear down any worktree used for this issue: links first (never a
+   recursive delete through them — see `pair` §5), then `git worktree
+   remove <path>`.
+5. Append a ledger entry (§5), commit it on the default branch
    (`docs(skilleddocs): ledger <NNN>`) and push. Count it toward the handoff
    budget (§6).
 
