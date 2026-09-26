@@ -29,7 +29,7 @@ Model-invocable, so the trigger phrases above work without the slash.
 
 1. **Ask up front, one batch** — audience, role, stack experience, each with
    a recommended default; proceeds on the answers or the defaults.
-2. **Collect and verify setup steps** — gathers steps from README/package
+2. **What it is, then setup** — opens with what the project is and its state; gathers steps from README/package
    files/Makefile/etc., runs each one in the current environment, and marks
    any step it didn't run as "unverified" with the reason (destructive,
    needs credentials, too slow).
@@ -72,16 +72,16 @@ Model-invocable, so the trigger phrases above work without the slash.
 ## Example
 
 ```
-/teammate-brief Priya
+/teammate-brief new backend dev
 ```
 
 Asks audience/role/experience, gets "go" (defaults accepted, assumes new to
 the stack); runs `npm install` and `npm test` and watches both pass; finds
-`STRIPE_KEY` and `DB_URL` read from the environment and tables where each
+`PAYMENTS_KEY` and `DB_URL` read from the environment and notes where each
 comes from; pulls three open issues into numbered tasks with a "done when"
 each; maps `api/` and `infra/` to their owners; lists `migrations/` as
 don't-touch with the reason; shows the full draft; writes
-`skilleddocs/briefs/priya-2026-09-26.md` on yes; commits on a separate yes;
+`skilleddocs/briefs/new-backend-dev-2026-09-26.md` on yes; commits on a separate yes;
 does not push or share it further without being asked.
 
 ## Related

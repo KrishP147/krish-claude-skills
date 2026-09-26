@@ -25,11 +25,15 @@ Proceed on their answers, or the recommended defaults if they just say "go".
 A newcomer default means spelling out steps a familiar teammate would skip;
 adjust once you know which one you're writing for.
 
-## 2. Collect and verify setup steps
+## 2. What it is, then setup
 
-Gather setup steps from whatever the repo actually has: `README*`,
+Open the brief with two or three sentences: what the project does, who uses
+it, and its current state (shipping, prototype, paused). Take it from the
+README and recent `git log`, not from memory.
+
+Then gather setup steps from whatever the repo actually has: `README*`,
 `package.json`/`pyproject.toml`/`Gemfile`/etc. scripts, `Makefile`,
-`docker-compose*`, CI config. Then **run each step yourself, in the current
+`docker-compose*`, CI config. Next, **run each step yourself, in the current
 environment** — install, build, test, start — and only write down what you
 watched succeed.
 
@@ -47,8 +51,8 @@ secrets):
 
 ```
 Variable       | What it's for            | Where to get it
-STRIPE_KEY     | payment API calls        | Stripe dashboard, Developers > API keys
-DB_URL         | local Postgres connection| teammate <name>, or .env.example default
+PAYMENTS_KEY   | payment API calls        | payment provider's dashboard, API keys page
+DB_URL         | local database connection| <owner from §5>, or .env.example default
 ```
 
 **Never** put a value in this table, and never open or read an actual
