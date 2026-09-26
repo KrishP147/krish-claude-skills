@@ -58,3 +58,89 @@ Claude Code asks you to approve the hook once per repo. Tune `THRESHOLD_MB`
 at the top of the script if your prompts are unusually large or small.
 Global instead of per-repo: put the same block in `~/.claude/settings.json`
 with an absolute path to the script.
+
+## `spend-guard.py` — block billable commands without an approval
+
+`PreToolUse` hook for `Bash` and MCP tool calls. Enforces the
+[`spend-gate`](../spend-gate/) skill's gate at the tool-call level: blocks a
+command or MCP call that matches a known billable pattern unless an
+approval already exists, so a billable action can't slip through even if
+the gate steps get skipped in the prompt.
+
+How it works: reads the hook JSON on stdin (`tool_name`,
+`tool_input.command` for `Bash`, `cwd`). A `Bash` command is checked against
+a list of regexes; any other tool name is checked against a list of
+`fnmatch` globs (for MCP tool names like `mcp__runpod__create-pod`).
+Default billable patterns: `runpodctl create`, `vultr-cli instance create`,
+`aws ec2 run-instances`, `gcloud compute instances create`, `az vm create`,
+`modal deploy`, and MCP tools matching `mcp__*runpod*__create-*` /
+`mcp__*runpod*__deploy-*`. Deliberately **not** defaulted: `fly deploy` and
+similar commands with a real free tier — add them yourself if your usage is
+always billable. No match → exits 0 (allow) immediately. Any error while
+reading config or matching (bad regex, unreadable file, malformed stdin)
+**fails open** — allows the call rather than blocking unrelated work on a
+hook bug; this hook is a net under `spend-gate`, not the only gate.
+
+Approval scheme (either allows the one matched action):
+
+1. **File-based, one-shot.** Drop any file into
+   `skilleddocs/spend-approvals/` (path relative to the tool call's `cwd`;
+   override the directory with `SPEND_GATE_APPROVALS_DIR`). The filename is
+   just a label — contents are ignored. The hook deletes the first file it
+   finds (sorted by name) and allows that single call; the next matching
+   call is blocked again until another approval file appears.
+2. **`SPEND_GATE_APPROVED=<label>`.** For `Bash`, prefix the one command —
+   `SPEND_GATE_APPROVED=yes runpodctl create pod ...` — this is a shell
+   per-command env assignment, read out of the command string itself (the
+   hook never executes the command), so it only ever covers that one
+   invocation. For an MCP tool call there's no command line to prefix, so
+   export it in the session first and **unset it right after** — this form
+   is not auto-consumed and will approve every matching call until unset.
+
+Patterns are extendable, without editing the script:
+
+- **Env var** `SPEND_GUARD_PATTERNS` — entries separated by `;` (regexes can
+  contain commas). Each entry is `bash:<regex>` or `mcp:<glob>`; no prefix
+  defaults to `bash:`.
+- **File** `.claude/spend-guard-patterns.txt` (relative to the tool call's
+  `cwd`) — same `bash:`/`mcp:` format, one entry per line; blank lines and
+  `#` comments are ignored.
+
+```
+# .claude/spend-guard-patterns.txt
+bash:\bdoctl\s+droplets\s+create\b
+mcp:mcp__*digitalocean*__create-*
+```
+
+Install into a repo:
+
+```bash
+mkdir -p .claude/hooks
+cp <skills repo>/hooks/spend-guard.py .claude/hooks/
+```
+
+`.claude/settings.json` (merge into an existing `hooks` block if there is
+one):
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/spend-guard.py\""
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Self-test (no billable API/CLI is ever called — every case is in-process
+with piped JSON): `python hooks/spend-guard.py --self-test`.
+
+Related: [`spend-gate`](../spend-gate/) (the skill this hook backs up).
