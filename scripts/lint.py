@@ -7,15 +7,32 @@ Checks: frontmatter present; name matches parent dir (skills) or file stem
 agent preloads exists as a skill dir in the repo; no agent preloads a
 skill marked disable-model-invocation: true.
 
+Also warns (to stderr, non-fatal) when a skill's README.md is missing one
+of the required "## " section headings from templates/skill/README.md.
+"templates/" itself is excluded from every check and from install.
+
 Usage: python scripts/lint.py
-Exit 0 + "OK: N skills, M agents" on success. Exit 1 with one line per
-failure otherwise.
+Exit 0 + "OK: N skills, M agents" on success (last stdout line). Exit 1
+with one line per failure otherwise. WARN lines never affect exit code.
 """
 import glob
 import os
 import sys
 
-SKIP_DIRS = {".git", "node_modules"}
+SKIP_DIRS = {".git", "node_modules", "templates"}
+
+REQUIRED_README_SECTIONS = [
+    "What it does",
+    "When to use",
+    "How to invoke",
+    "How it works",
+    "Design principles",
+    "Use cases",
+    "Tips",
+    "Example",
+    "Related",
+    "Prereqs",
+]
 
 
 def repo_root():
@@ -108,6 +125,33 @@ def lint_common(path, text, fm, body, expected_name, failures):
         failures.append("%s: contains forbidden word 'praxic'" % path)
 
 
+def readme_headings(text):
+    headings = set()
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("## "):
+            headings.add(stripped[3:].strip())
+    return headings
+
+
+def warn_missing_readme_sections(skill_md_path):
+    """If a README.md sits next to this SKILL.md, print one WARN line to
+    stderr naming any required section headings it's missing. "## Invoke"
+    counts as "## How to invoke". Never affects the exit code."""
+    readme_path = os.path.join(os.path.dirname(skill_md_path), "README.md")
+    if not os.path.isfile(readme_path):
+        return
+    with open(readme_path, "r", encoding="utf-8") as f:
+        headings = readme_headings(f.read())
+    if "Invoke" in headings:
+        headings.add("How to invoke")
+    missing = [h for h in REQUIRED_README_SECTIONS if h not in headings]
+    if missing:
+        sys.stderr.write(
+            "WARN: %s: missing sections: %s\n" % (readme_path, ", ".join(missing))
+        )
+
+
 def main():
     root = repo_root()
     failures = []
@@ -127,6 +171,7 @@ def main():
         lint_common(path, text, fm, body, parent_dir, failures)
         if fm and str(fm.get("disable-model-invocation", "")).strip().lower() == "true":
             disabled_skills.add(parent_dir)
+        warn_missing_readme_sections(path)
 
     agent_skill_lists = {}
     for path in agent_files:
