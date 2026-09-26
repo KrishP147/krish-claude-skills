@@ -151,7 +151,11 @@ gh auth refresh -s project -s read:project
 python scripts/lint.py
 ```
 
-Checks every `SKILL.md` and agent file (`agents/README.md` is docs, skipped by lint and install): frontmatter present, `name` matches the folder, description present and ≤1024 chars, no project-specific names leaking in, every skill an agent preloads exists and is model-invocable. The install scripts run this first and stop on failure.
+Checks every `SKILL.md` and agent file (`agents/README.md` is docs, skipped by lint and install): frontmatter present, `name` matches the folder, description present and ≤1024 chars, no project-specific names leaking in, every skill an agent preloads exists and is model-invocable. The install scripts run this first and stop on failure. It also prints non-fatal `WARN:` lines (stderr) for a skill README missing a required section — see [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
+## Contributing / grow this repo
+
+Contributions welcome — new skills, fixes, better docs. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the submission format (start from [`templates/skill/`](templates/skill/)) and rules. Feel free to grow it.
 
 ## My `CLAUDE.md`
 
