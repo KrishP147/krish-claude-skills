@@ -47,8 +47,8 @@ repo with no board (roadmap doc only), or a reused worktree/branch (already
 marked). Projects v2: move the card to "In
 Progress" with `gh project item-edit` (IDs looked up as `session-handoff` §3
 does, never guessed); label fallback: create `status:in-progress` first if
-missing (`gh label create status:in-progress --force` — see `kanban/next`
-§1), then `gh issue edit <n> --remove-label status:todo --add-label
+missing (`gh label create status:in-progress --color FBCA04 --force` —
+see `kanban/next` §1), then `gh issue edit <n> --remove-label status:todo --add-label
 status:in-progress`. Then one issue comment: "Started on branch `<branch>`".
 If the board update errors, say so and carry on — it never blocks the task.
 

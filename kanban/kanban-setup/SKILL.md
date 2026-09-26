@@ -43,7 +43,7 @@ If no title match exists: `gh project create --owner <owner> --title "<repo> Boa
   Field and option ids come from the `field-list` call above. If you'd rather not script it, say so plainly and tell the user to add the "In Review" option by hand in the project UI (Status field → edit → add option) — don't claim the CLI did it when it can't.
 - Already has it: nothing to do.
 
-If the repo will use label mode instead of (or because Projects v2 isn't available): create the four status labels up front — `gh label create status:todo --force`, and the same for `status:in-progress`, `status:in-review`, `status:done` — so nothing downstream has to discover one is missing.
+If the repo will use label mode instead of (or because Projects v2 isn't available): create the four status labels up front — `gh label create status:todo --color EDEDED --force`, and the same for `status:in-progress`, `status:in-review`, `status:done` with the colors in `next` §1 — so nothing downstream has to discover one is missing.
 
 ## 3. Scan the repo for documented work
 

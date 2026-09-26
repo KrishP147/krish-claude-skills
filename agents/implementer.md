@@ -23,7 +23,7 @@ session unless you explicitly report otherwise.
 - Created the branch yourself (not handed one)? Mark the issue started: card
   → "In Progress" via `gh project item-edit` (IDs as `session-handoff` §3, never
   guessed); labels: create `status:in-progress` first if missing (`gh label
-  create status:in-progress --force` — see `kanban/next` §1), then `gh issue
+  create status:in-progress --color FBCA04 --force` — see `kanban/next` §1), then `gh issue
   edit <n> --remove-label status:todo --add-label status:in-progress`; no
   board: skip. Comment "Started on branch `<branch>`". Board error → note it
   in the handoff, carry on; never block on it.
