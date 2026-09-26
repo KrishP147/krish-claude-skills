@@ -113,29 +113,30 @@ site). Sync: clean, pulled nothing new. Survey found:
   missing four required sections. That gap already has an open issue
   covering exactly this, so it's listed as **already tracked**, not
   proposed again.
-- Three of the repo's hook scripts (a git-push guard, a spend-approval
-  guard, a context-budget warning hook) have no unit tests, while a fourth
-  script of comparable size in the same repo (a static-site builder) does
-  have one. That asymmetry, plus the fact that two of the three untested
-  hooks gate destructive or billable actions, made it the top new item.
+- Two hook scripts that gate destructive or billable commands each ship a
+  `--self-test` mode, but CI runs lint, the site build, and the unit-test
+  suites only, never those self-tests. A regression in either guard would
+  merge green. Cheap to fix, high stakes: the top new item.
+- The static site's per-skill detail page is a template that still says
+  "coming soon". A real extension, but bigger: it needs a decision on what
+  each page shows.
 
 Chat summary:
 
 ```
 Scanned <repo> (synced clean).
-9 candidates -> 3 after evidence + already-tracked filter.
+6 candidates -> 3 after evidence + already-tracked filter.
 Report: skilleddocs/gaps/2026-09-26.md
 
-1. [S] Unit-test the push-guard and spend-approval hooks - no test file
-   next to two hooks that gate destructive/billable actions, unlike the
-   sibling script that has one (evidence: hooks/, scripts/test_build_site.py)
-2. [S] README section backfill - already tracked: #22
-3. [L] Extend the site build's asset pipeline for per-skill screenshots -
-   evidence: site/README.md's stated scope stops at text pages
+1. [S] Run the hooks' --self-test in CI - both guards have one, CI never
+   calls it (evidence: .github/workflows/ci.yml:23-31,
+   agents/hooks/guard-git.py:120, hooks/spend-guard.py:245)
+2. [L] Real per-skill detail pages - template is a placeholder
+   (evidence: site/src/detail.html:17)
+3. [S] README section backfill - already tracked: #22
 
-Tests: ran (site-build unit tests), 9 passed.
-Visual pass: skipped (repo is a skills collection, not a UI app to preview;
-its small static site sub-project wasn't in scope for this pass).
+Tests: ran (python unittest suite), 9 passed.
+Visual pass: skipped (the site is a sub-project; not in scope this pass).
 ```
 
 No issues were created — that needs an explicit yes per §7 of `SKILL.md`.
