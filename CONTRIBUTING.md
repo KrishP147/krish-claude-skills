@@ -5,14 +5,15 @@ to publish.
 
 ## 1. Watch this first (mandatory)
 
-Before writing a skill, watch Matt Pocock's [Claude Code skills video](https://www.youtube.com/watch?v=v4F1gFy-hqg).
+Before writing a skill, watch [this video by Matt Pocock](https://www.youtube.com/watch?v=v4F1gFy-hqg).
 
-Why: this repo follows the principles it lays out — small, composable
-skills over one giant prompt; "grill before you build" (stress-test a plan
-before implementing it); staying in the model's "smart zone" via handoffs
-instead of one long session degrading; and human gates on anything that
-touches the outside world (pushes, merges, posts). A skill submitted without
-that context tends to fight these conventions instead of fitting them.
+Why: it is the shared context for how this repo is built. The skills here
+follow a few principles in that spirit: small, composable skills rather than
+one giant prompt; grill a plan before building it; keep sessions in the
+model's "smart zone" by handing off to a fresh session instead of letting one
+run long; and keep a human gate on outward actions (pushes, merges, posts).
+A skill written with that context tends to fit these conventions instead of
+fighting them.
 
 ## 2. What a submission looks like
 
@@ -24,8 +25,9 @@ A skill submission is a directory containing:
   [`templates/skill/README.md`](templates/skill/README.md) exactly: the same
   `## ` headings, in the same order (`What it does`, `When to use`,
   `How to invoke`, `How it works`, `Design principles`, `Use cases`, `Tips`,
-  `Example`, `Related`, `Prereqs`). `scripts/lint.py` parses these headings
-  to build the skill's page on the site, so don't rename or drop them.
+  `Example`, `Related`, `Prereqs`). The site parses these headings to build
+  the skill's page and `scripts/lint.py` warns when one is missing, so don't
+  rename or drop them (`## Invoke` is accepted for `How to invoke`).
 
 ## 3. Rules
 
@@ -34,7 +36,7 @@ A skill submission is a directory containing:
   check; a skill that only makes sense inside one specific project doesn't
   belong here.
 - **License.** Contributions are made under this repo's MIT license (see
-  [`LICENSE`](LICENSE)) unless you say otherwise up front.
+  [`LICENSE`](LICENSE)).
 - **Credit third-party work.** If your skill is copied or adapted from
   someone else's, add an entry to
   [`THIRD_PARTY_LICENSES.md`](THIRD_PARTY_LICENSES.md) naming the source and
