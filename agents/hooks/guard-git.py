@@ -32,7 +32,7 @@ ASSIGN_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=")
 REDIRECT_RE = re.compile(r"^\d*(>>?|<<<?|<<-?|<|>&|<&|&>>?|>\|)(.*)$")
 SHELLS = {"sh", "bash", "zsh", "dash", "ksh", "mksh", "ash"}
 PWSH = {"pwsh", "powershell"}
-KEYWORDS = {"if", "then", "else", "elif", "do", "while", "until", "time", "!", "{", "}", "exec", "nohup", "command", "builtin"}
+KEYWORDS = {"if", "then", "else", "elif", "do", "while", "until", "!", "{", "}", "exec", "nohup", "command", "builtin"}
 # Output idioms for "the current branch" - treated like HEAD in a refspec.
 CURRENT_BRANCH_IDIOMS = (
     re.compile(r"^\s*git\s+branch\s+--show-current\s*$"),
@@ -399,6 +399,12 @@ def run_segment(toks, ctx, subs, depth):
         return shell_c(rest, ctx, depth)
     if head in PWSH:
         return pwsh_c(rest, ctx, depth)
+    if head == "watch":
+        i = 0
+        while i < len(rest) and rest[i].startswith("-"):
+            i += 2 if rest[i] in ("-n", "--interval", "-q", "--equexit") else 1
+        analyze(" ".join(rest[i:]), ctx, depth + 1)  # watch runs its args via sh -c
+        return False
     if head == "cmd" and rest and rest[0].lower() in ("/c", "/k"):
         analyze(" ".join(rest[1:]), ctx, depth + 1)
         return False
@@ -436,6 +442,14 @@ def strip_prefixes(toks, ctx, depth):
                 o = toks.pop(0)
                 if o in ("-u", "-g", "-h", "-p", "-C", "-D", "-r", "-t", "-U") and toks:
                     toks.pop(0)
+        elif b in ("time", "setsid", "chronic"):
+            toks.pop(0)
+            while toks and toks[0].startswith("-"):
+                o = toks.pop(0)
+                if b == "time" and o in ("-f", "-o", "--format", "--output") and toks:
+                    toks.pop(0)  # GNU /usr/bin/time
+                if o == "--":
+                    break
         elif b in ("nice", "timeout", "stdbuf", "ionice"):
             toks.pop(0)
             while toks and toks[0].startswith("-"):
@@ -809,6 +823,17 @@ CASES = [
     ('"C:\\Program Files\\Git\\cmd\\git.exe" push origin main', B, "feat"),
     ("sudo -u me git push origin main", B, "feat"),
     ("timeout 30 git push origin main", B, "feat"),
+    ("time git push origin main", B, "feat"),
+    ("time -p git push origin main", B, "feat"),
+    ("time -- git push origin main", B, "feat"),
+    ("/usr/bin/time -f %e -o t.txt git push origin main", B, "feat"),
+    ("setsid -f git push origin main", B, "feat"),
+    ("nohup git push origin main &", B, "feat"),
+    ("chronic git push origin main", B, "feat"),
+    ("watch -n 5 git push origin main", B, "feat"),
+    ("watch -d 'git push origin main'", B, "feat"),
+    ("time -p git push origin krish/x", A, "feat"),
+    ("watch -n 5 git status", A, "main"),
     ("g''it pu\\sh origin ma''in", B, "feat"),
     ("bash -c 'git push origin main'", B, "feat"),
     ("sh -c \"cd x && git push origin main\"", B, "feat"),
