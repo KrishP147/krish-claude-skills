@@ -38,6 +38,7 @@ Each tier builds on the one above: `pair` is one orchestrator loop without the b
 | [`sitrep`](sitrep/README.md) | Live, conversational status check in 10 lines or fewer: what's running, git state, open PRs + CI, an asked-vs-done checklist, needs-you items, and a SAFE/NOT SAFE close verdict. Gated stop-and-handoff on explicit "close". Read-only otherwise. | `gh`; background-task tools if available (optional) |
 | [`gap-scan`](gap-scan/README.md) | Surveys one or more repos (sync, README/docs, recent commits, TODOs, tests, open issues, an optional visual pass for UI apps) and returns a ranked, evidence-cited list of gaps, bugs, and extensions as issue-ready items. Read-only: writes one report under `skilleddocs/gaps/`; creating issues needs an explicit yes. | `gh` |
 | [`repo-showcase`](repo-showcase/README.md) | Gets a repo's working tree ready to be seen: rewrites the README around outcome and demo, prunes stale docs, fixes claims the code has outdated, scans for secrets and private names, proposes GitHub metadata. Never touches history or visibility — hands off to `repo-scrub` for that. | `gh` (metadata step only) |
+| [`teammate-brief`](teammate-brief/README.md) | Writes a handoff document for a person joining or picking up a project: setup steps verified by running them, an env/keys table (names only, never values), numbered tasks with a "done when" each, an ownership map, and a don't-touch list. Saved to `skilleddocs/briefs/`; commits and pushes gated separately. | none |
 
 ### [`kanban/`](kanban/) — GitHub-Issues-as-kanban-board workflow
 
