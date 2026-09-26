@@ -84,3 +84,15 @@ Times: America/Toronto (EDT).
 - verified by: CI green (runs 36220686191, 36220734506, 36220834546); private name absent from tree (git grep); lint OK 22 skills 4 agents; site 47 py + 8 node tests (manager); /pair page screenshot reviewed
 - decided for you: no history scrub for the private codename in old lint.py commits → blocklist entry, not a secret; scrub needs force-push (left as question)
 - manual step for user: first reinstall after pull needs `-Force`/`--force` (installed skills predate markers)
+
+### 015 · 2026-09-26 03:10 EDT · verify
+- issue/PR: PR #32-#40
+- what: verifier: all 9 claims match master; repo-showcase Related links fixed (f82e67f); filed #41 (repo-scrub empty-secret grouping), #42 (guard gaps: Windows w/o Git Bash, scripts/aliases/curl, refs/heads//main).
+- verified by: master CI 36220992179 green; lint 22/4, unittest 47, repo-scrub 12, guard 175/175, spend-guard 18/18, node 8/8; private word in no tracked file
+- decided for you: D5 guard matcher Bash|PowerShell; D6 conservative guard blocks; D7 no history rewrite for old codename; D8 accept detail-page layout choices; D9 fixed status label colors
+
+### 016 · 2026-09-26 03:12 EDT · handoff
+- issue/PR: none
+- what: budget reached (13 merges, parallel loops). State in skilleddocs/orchestrator/orchestrator-handoff.md. Open queue: #21, #22, #3, #24, #25, #27, #13, #41, #42; #5 awaits user.
+- verified by: master green, no open worktrees/branches
+- manual step for user: resume with `/meta-orchestrator C:\Users\User\source\repos\claude-skills resume`
