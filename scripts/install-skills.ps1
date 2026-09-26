@@ -17,9 +17,9 @@ $target = if ($env:CLAUDE_SKILLS_DIR) { $env:CLAUDE_SKILLS_DIR } else { Join-Pat
 $agentsTarget = if ($env:CLAUDE_AGENTS_DIR) { $env:CLAUDE_AGENTS_DIR } else { Join-Path $env:USERPROFILE ".claude\agents" }
 
 function Get-WorkingPython3 {
-    # first candidate that actually runs Python 3 (skips e.g. the Windows
-    # Store python stub, which sits on PATH under WindowsApps but refuses
-    # to run code)
+    # first candidate that actually runs Python 3. The probe skips the
+    # Windows Store python stub (WindowsApps alias that refuses to run
+    # code) while keeping a real Store-installed Python, which lives there too.
     $candidates = @(
         @{ Cmd = "python"; Args = @() },
         @{ Cmd = "python3"; Args = @() },
@@ -28,7 +28,6 @@ function Get-WorkingPython3 {
     foreach ($c in $candidates) {
         $cmd = Get-Command $c.Cmd -ErrorAction SilentlyContinue
         if (-not $cmd) { continue }
-        if ($cmd.Source -like "*WindowsApps*") { continue }
         try {
             & $cmd.Source @($c.Args) -c "import sys;sys.exit(0 if sys.version_info[0]==3 else 1)" 2>$null | Out-Null
             if ($LASTEXITCODE -eq 0) {

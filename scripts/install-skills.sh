@@ -50,7 +50,8 @@ elif try_py py -3; then
 fi
 
 if [[ -n "$pybin" ]]; then
-  if ! "$pybin" "${pyargs[@]}" "$repo_root/scripts/lint.py"; then
+  # ${arr[@]+...}: empty-array expansion under set -u breaks bash < 4.4 (macOS)
+  if ! "$pybin" ${pyargs[@]+"${pyargs[@]}"} "$repo_root/scripts/lint.py"; then
     echo "lint failed - aborting install" >&2
     exit 1
   fi

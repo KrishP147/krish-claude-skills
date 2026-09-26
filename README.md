@@ -111,7 +111,7 @@ This lints the repo, then copies every skill into `~/.claude/skills/<name>/` and
 
 The lint step needs a real Python 3 on `PATH` (`python`, `python3`, or — on Windows — `py -3`; a Windows Store Python stub is detected and skipped). No working Python 3 is found → the install fails with a clear message; pass `--no-lint` (sh) / `-NoLint` (ps1) to proceed anyway, with a warning, and skip the lint step.
 
-If a directory with the same name as one of this repo's skills already exists under `~/.claude/skills/` but has no `.from-krishp147-skills` marker (i.e. you didn't get it from here), the install leaves it untouched, warns, and exits non-zero at the end so you notice. Pass `--force` (sh) / `-Force` (ps1) to replace it anyway.
+If a directory with the same name as one of this repo's skills already exists under `~/.claude/skills/` but has no `.from-krishp147-skills` marker (i.e. you didn't get it from here), the install leaves it untouched, warns, and exits non-zero at the end so you notice. Pass `--force` (sh) / `-Force` (ps1) to replace it anyway. Upgrading from an install made before the marker existed? Every old skill dir looks foreign, so run once with `--force` / `-Force`.
 
 ## Update
 
