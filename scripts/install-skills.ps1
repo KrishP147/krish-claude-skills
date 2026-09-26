@@ -12,8 +12,13 @@ $pyCmd = Get-Command python -ErrorAction SilentlyContinue
 if (-not $pyCmd) { $pyCmd = Get-Command python3 -ErrorAction SilentlyContinue }
 
 if ($pyCmd) {
+    # lint WARN lines go to stderr; under "Stop", PS 5.1 turns redirected
+    # native stderr into a terminating error, so relax it for this call.
+    $ErrorActionPreference = "Continue"
     & $pyCmd.Source (Join-Path $repoRoot "scripts\lint.py")
-    if ($LASTEXITCODE -ne 0) {
+    $lintExit = $LASTEXITCODE
+    $ErrorActionPreference = "Stop"
+    if ($lintExit -ne 0) {
         Write-Error "lint failed - aborting install"
         exit 1
     }
