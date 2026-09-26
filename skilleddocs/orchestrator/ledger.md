@@ -47,3 +47,9 @@ Times: America/Toronto (EDT).
 - what: site slice 1 — stdlib build, Claude-Code-style terminal home, locked `/` input, grouped list, placeholder pages, first CI workflow, vercel.json.
 - verified by: CI run 36218781515 green; local lint + 9/9 unittest + 8/8 node; desktop screenshot reviewed
 - manual step for user: Vercel import repo (build `python3 scripts/build_site.py`, out `site/dist`) + DNS CNAME skills → cname.vercel-dns.com
+
+### 009 · 2026-09-26 01:35 EDT · merge
+- issue/PR: #7 / PR #29, #6 / PR #30, #8 / PR #31
+- what: new skills sitrep, pr-watch, spend-gate (+ hooks/spend-guard.py tripwire). Mined from past sessions.
+- verified by: CI green on each PR (runs 36219081961, 36219242695, 36219406036); lint OK 18 skills 4 agents; spend-guard self-test 18/18 (manager)
+- decided for you: README table-row conflicts resolved by keeping both rows
