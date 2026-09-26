@@ -10,7 +10,7 @@ argument-hint: "issue number or URL this session worked on"
 
 3. Move the card to reflect reality. Locate the board the way `next` §1 does.
    - Projects v2: `gh project item-edit --id <item-id> --field-id <status-field-id> --project-id <project-id> --single-select-option-id <option-id>` (look up the IDs via `gh project field-list` / `gh project item-list` first — they're opaque, don't guess them). `gh project item-list` is eventually consistent and can return empty for items genuinely on the board; if so, get the item id via: `gh api graphql -f query='query{repository(owner:"<owner>",name:"<repo>"){issue(number:<n>){projectItems(first:5){nodes{id project{id number}}}}}}'`
-   - Label fallback: swap `status:in-progress` for `status:in-review` (complete) or leave as `status:in-progress` (partial/blocked), and add a comment explaining why if blocked.
+   - Label fallback: create `status:in-review` first if missing (`gh label create status:in-review --color 5319E7 --force` — see `next` §1), then swap `status:in-progress` for it (complete) or leave as `status:in-progress` (partial/blocked), and add a comment explaining why if blocked.
 
 4. Print the handoff file path, same as the base skill.
 

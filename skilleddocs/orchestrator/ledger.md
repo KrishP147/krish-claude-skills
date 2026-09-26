@@ -35,3 +35,45 @@ Times: America/Toronto (EDT).
 - issue/PR: #14, #15 / PR #26
 - what: Windows-safe worktree teardown (links first); manager spawns implementer blocking, no sleep-poll.
 - verified by: lint OK after merging master into branch
+
+### 007 · 2026-09-26 01:05 EDT · verify
+- issue/PR: PR #16, PR #26
+- what: verifier: claims match git log; #4 #14 #15 closed status:done; filed #27 (lint counts headings in code fences); flagged untracked `.lint-forbidden.txt` risk → orchestrator added it to .git/info/exclude.
+- verified by: lint OK on 286c9a5
+- decided for you: keep PR #16's committed handoff → repo opts into skilleddocs/; fence bug → issue #27; .gitignore fix → left to #20
+
+### 008 · 2026-09-26 01:15 EDT · merge
+- issue/PR: #1 / PR #28
+- what: site slice 1 — stdlib build, Claude-Code-style terminal home, locked `/` input, grouped list, placeholder pages, first CI workflow, vercel.json.
+- verified by: CI run 36218781515 green; local lint + 9/9 unittest + 8/8 node; desktop screenshot reviewed
+- manual step for user: Vercel import repo (build `python3 scripts/build_site.py`, out `site/dist`) + DNS CNAME skills → cname.vercel-dns.com
+
+### 009 · 2026-09-26 01:35 EDT · merge
+- issue/PR: #7 / PR #29, #6 / PR #30, #8 / PR #31
+- what: new skills sitrep, pr-watch, spend-gate (+ hooks/spend-guard.py tripwire). Mined from past sessions.
+- verified by: CI green on each PR (runs 36219081961, 36219242695, 36219406036); lint OK 18 skills 4 agents; spend-guard self-test 18/18 (manager)
+- decided for you: README table-row conflicts resolved by keeping both rows
+
+### 010 · 2026-09-26 01:55 EDT · verify
+- issue/PR: PR #28, #29, #30, #31
+- what: verifier: all claims match; sitrep updated (TaskOutput deprecated → read task output file); top README gained a site/ section; decisions.md created D1-D4.
+- verified by: master CI runs 36219424250, 36219722408 green; lint, spend-guard 18/18, unittest 9/9, node 8/8
+- decided for you: vercel.json at root (D1); Enter opens highlighted first match (D2); keep 404/--out/`/`-focus extras (D3); spend-guard inline prefix covers compound cmd (D4)
+
+### 011 · 2026-09-26 02:00 EDT · merge
+- issue/PR: #18 / PR #32, #10 / PR #33
+- what: repo-scrub hardening (rotate-first gate, parse fix, fingerprint-only findings, LFS first, dedupe, 12 tests, CI step); new skill repo-showcase.
+- verified by: CI runs 36219898973, 36220015034 green; repo-scrub unittest 12/12 local
+- decided for you: #18 squashed onto a fresh branch (deviation from merge-commit style) → branch history held a key-shaped fake fixture that push protection/scanners would flag
+
+### 012 · 2026-09-26 02:30 EDT · merge
+- issue/PR: #17, #9, #23 (PRs #34-#36)
+- what: guard hook hardened (quote-aware parser, 175 self-tests, fails closed w/o python, Bash|PowerShell matcher) + CI runs hook self-tests; new skill gap-scan; kanban fixes (per-workflow CI check, status labels w/ pinned colors, Projects Status on add).
+- verified by: CI green on each PR (e.g. run 36220431400, 36220497750); guard self-test 175/175 local
+- decided for you: accepted Bash|PowerShell matcher scope creep → else PowerShell tool bypasses guard; `echo git push origin main` allowed (no exec)
+- manual step for user: re-run install-skills after pull so ~/.claude/agents gets the new hook command
+
+### 013 · 2026-09-26 02:32 EDT · decision
+- issue/PR: none
+- what: handoff budget (10) passed at 11 merges because loops ran in parallel; finishing in-flight #2, #19/#20, #11, #12, no new starts, then orchestrator handoff.
+- verified by: not verified: decision
